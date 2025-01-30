@@ -1,5 +1,6 @@
 import React from "react";
 import { useFonts } from "expo-font";
+import { Stack } from "expo-router";
 import { Slot } from "expo-router";
 import {
     Roboto_300Light,
@@ -31,8 +32,6 @@ export default function Layout() {
     if (!fontsLoaded) {
         return null;
     }
-    
-    return (
-        <Slot />
-    );
+
+    return <Stack screenOptions={{ headerShown: false }} />;
 }

@@ -3,10 +3,9 @@ import React from "react";
 import { colors } from "../styles/color";
 import { fontFamily } from "../styles/fontFamily";
 import PorquinhoIndex from "../assets/porquinho-home.svg";
-import CustomButton from "../components/Form/CustomButtom"
+import CustomButton from "../components/Form/CustomButtom";
+import { Link } from "expo-router";
 export default function Home() {
-
-
     return (
         <View style={styles.container}>
             <View style={styles.containerText}>
@@ -22,7 +21,11 @@ export default function Home() {
                 <PorquinhoIndex />
             </View>
             <View style={styles.buttonContainer}>
-            <CustomButton width={190} height={60} >Login/Cadastrar</CustomButton>
+                <Link href={"/Register"} asChild>
+                    <CustomButton width={190} height={60}>
+                        Login/Cadastrar
+                    </CustomButton>
+                </Link>
             </View>
         </View>
     );
@@ -57,5 +60,5 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         marginBottom: 20,
-    }
+    },
 });
