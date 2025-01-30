@@ -2,9 +2,11 @@ import { View, Text, StyleSheet } from "react-native";
 import React from "react";
 import { colors } from "../styles/color";
 import { fontFamily } from "../styles/fontFamily";
-import { PorquinhoIndex } from "../assets/porquinho-home.svg";
-
+import PorquinhoIndex from "../assets/porquinho-home.svg";
+import CustomButton from "../components/Form/CustomButtom"
 export default function Home() {
+
+
     return (
         <View style={styles.container}>
             <View style={styles.containerText}>
@@ -15,7 +17,12 @@ export default function Home() {
                     e construir{" "}
                     <Text style={styles.highlightText}>valores.</Text>
                 </Text>
+            </View>
+            <View style={styles.iconContainer}>
                 <PorquinhoIndex />
+            </View>
+            <View style={styles.buttonContainer}>
+            <CustomButton width={190} height={60} >Login/Cadastrar</CustomButton>
             </View>
         </View>
     );
@@ -25,11 +32,11 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: colors.black,
-        paddingHorizontal: 30,
     },
     containerText: {
         marginTop: 150,
         maxWidth: "90%",
+        paddingHorizontal: 30,
     },
     mainText: {
         fontFamily: fontFamily.playfair.medium,
@@ -41,4 +48,14 @@ const styles = StyleSheet.create({
     highlightText: {
         color: colors.primary,
     },
+    iconContainer: {
+        flex: 1,
+        alignItems: "flex-end",
+    },
+    buttonContainer: {
+        flex: 1,
+        alignItems: "center",
+        justifyContent: "center",
+        marginBottom: 20,
+    }
 });

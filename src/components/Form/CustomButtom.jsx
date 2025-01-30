@@ -1,5 +1,6 @@
 import React from "react";
 import { TouchableOpacity, Text, StyleSheet } from "react-native";
+import { fontFamily } from "../../styles/fontFamily";
 
 export default function CustomButton({ width, height, type = "primary", onPress, children }) {
     const isPrimary = type === "primary";
@@ -29,11 +30,11 @@ const styles = StyleSheet.create({
     button: {
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 8,
+        borderRadius: 40,
         paddingHorizontal: 16,
     },
     text: {
-        fontSize: 16,
-        fontWeight: "bold",
+        fontSize: 20,
+        fontFamily: fontFamily.roboto.bold,
     },
 });
