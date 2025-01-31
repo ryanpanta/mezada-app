@@ -10,6 +10,7 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { Redirect } from "expo-router";
 
 const schema = yup.object().shape({
     name: yup.string().required("O nome é obrigatório"),
@@ -40,6 +41,7 @@ export default function Register() {
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
     function handleRegister(data) {
+        <Redirect href="/CreateOrEnterGroup" />
         console.log(data);
     }
 

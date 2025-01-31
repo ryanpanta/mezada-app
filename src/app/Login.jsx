@@ -16,19 +16,23 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
+import { useRouter } from "expo-router";
 
 const schema = yup.object().shape({
-    email: yup
-        .string()
-        .email("E-mail inválido")
-        .required("O e-mail é obrigatório"),
-    password: yup
-        .string()
-        .min(6, "A senha deve ter pelo menos 6 caracteres")
-        .required("A senha é obrigatória"),
+    // email: yup
+    //     .string()
+    //     .email("E-mail inválido")
+    //     .required("O e-mail é obrigatório"),
+    // password: yup
+    //     .string()
+    //     .min(6, "A senha deve ter pelo menos 6 caracteres")
+    //     .required("A senha é obrigatória"),
 });
 
 export default function Login() {
+
+    const router = useRouter();
+
     const {
         control,
         handleSubmit,
@@ -40,6 +44,8 @@ export default function Login() {
     const [showPassword, setShowPassword] = React.useState(false);
 
     function handleLogin(data) {
+        router.replace('/CreateOrEnterGroup');
+
         console.log(data);
     }
 
