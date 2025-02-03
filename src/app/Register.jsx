@@ -10,10 +10,10 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { Redirect } from "expo-router";
+import { useRouter } from "expo-router";
 
 const schema = yup.object().shape({
-    name: yup.string().required("O nome é obrigatório"),
+    /* name: yup.string().required("O nome é obrigatório"),
     email: yup
         .string()
         .email("E-mail inválido")
@@ -25,10 +25,13 @@ const schema = yup.object().shape({
     confirmPassword: yup
         .string()
         .oneOf([yup.ref("password"), null], "As senhas não são iguais")
-        .required("A confirmação de senha é obrigatória"),
+        .required("A confirmação de senha é obrigatória"), */
 });
 
 export default function Register() {
+
+    const router = useRouter();
+
     const {
         control,
         handleSubmit,
@@ -41,7 +44,7 @@ export default function Register() {
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
     function handleRegister(data) {
-        <Redirect href="/CreateOrEnterGroup" />
+        router.replace('/(tabs)');
         console.log(data);
     }
 
