@@ -85,7 +85,6 @@ const DashBoard = () => {
                 <Text style={styles.titleSection}>
                     Ações
                 </Text>
-
                 <View style={styles.actionBackground}>
                     <View style={styles.itemContainerAction}>
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
@@ -100,7 +99,7 @@ const DashBoard = () => {
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
                             <ChartColumnIncreasing color={"#008012"} />
                         </View>
-                        <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
+                        <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", flex: 1}}>
                             <Text style={styles.actionText}>Encerrar o ciclo de mesada e consultar sugestão de valor</Text>
                             <ChevronRight color={"#8B8B8B"} />
                         </View>
@@ -171,24 +170,29 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(82, 167, 94, 0.1)",
         borderRadius: 20,
         gap: 30,
+        flexWrap: "wrap",
+        maxWidth: "100%",
+        
     },
+
     itemContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
         gap: 10,
+        
     },
     itemContainerAction: {
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
-        flex: 1,
-        maxWidth: "100%",
+
     },
     wrapper: {
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "50%",
         padding: 12,
+        
     },
     totalWrapper: {
         backgroundColor: "#BABABA",
@@ -224,7 +228,8 @@ const styles = StyleSheet.create({
         fontFamily: fontFamily.roboto.regular,
         fontSize: 16,
         color: colors.black,
-        maxWidth: "90%",
+        maxWidth: "90%"
+        
     }
 });
 
