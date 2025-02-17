@@ -44,7 +44,7 @@ export default function Register() {
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
     function handleRegister(data) {
-        router.replace('/(tabs)');
+        router.replace('/(tabs)/Home');
         console.log(data);
     }
 

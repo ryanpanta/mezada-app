@@ -15,10 +15,11 @@ export default function Layout() {
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen
                 name="Create"
-                
                 options={{
                     headerTitle: () => (
-                        <HeaderCustom title="Criar grupo familiar" />
+                        <View style={{ marginBottom: 26 }}>
+                            <HeaderCustom title="Criar grupo familiar" />
+                        </View>
                     ),
                 }}
             />
@@ -26,7 +27,9 @@ export default function Layout() {
                 name="Join"
                 options={{
                     headerTitle: () => (
-                        <HeaderCustom title="Entrar em um grupo familiar" />
+                        <View style={{ marginBottom: 26 }}>
+                            <HeaderCustom title="Entrar em um grupo familiar" />
+                        </View>
                     ),
                 }}
             />

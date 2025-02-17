@@ -1,36 +1,23 @@
-import { View, Text, StyleSheet, TextInput } from "react-native";
+import { View, Text, Button, StyleSheet, TextInput } from "react-native";
+import HeaderCustom from "../../../components/HeaderCustom";
+import { colors } from "../../../styles/color";
+import { fontFamily } from "../../../styles/fontFamily";
 import React from "react";
-import CustomButton from "../../components/Form/CustomButtom";
-import { fontFamily } from "../../styles/fontFamily";
-import { colors } from "../../styles/color";
-import HeaderCustom from "../../components/HeaderCustom";
-import { CopyCheck } from "lucide-react-native";
+import { useForm, Controller } from "react-hook-form";
+import CustomButton from "../../../components/Form/CustomButtom";
+import { useRouter } from "expo-router";
 
-function CreateGroup() {
-    const [name, setName] = React.useState("");
+export default function GroupInformation() {
     return (
         <View style={styles.container}>
             <View style={{ marginBottom: 26 }}>
-                <HeaderCustom title="Criar grupo familiar" />
+                <HeaderCustom title="Informações do Grupo" />
             </View>
-            <Text style={styles.mainText}>
-                Crie seu grupo familiar para começar a gerenciar tarefas e
-                mesadas. Compartilhe o código do grupo com seus familiares para
-                que possam participar.
-            </Text>
-            <Text style={styles.infoText}>
-                Escolha um nome fácil para identificar seu grupo, como “Família
-                Silva” ou “Casa da Vovó”.
-            </Text>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setName}
-                    value={name}
-                    placeholder="Nome do grupo"
-                />
-            </View>
-            <View style={styles.codeContainer}>
+            <Text style={styles.sectionTitle}>Informações Principais</Text>
+            <View style={styles.background}>
+                <Text style={styles.label}>Nome do Grupo</Text>
+                <Text style={styles.groupName}>Família Rodrigues</Text>
+                <Text style={styles.label}>Código do Grupo</Text>
                 <CustomButton type="secondary" width={200} height={50}>
                     <View
                         style={{
@@ -63,9 +50,6 @@ function CreateGroup() {
                     </Text>
                 </Text>
             </View>
-            <CustomButton width={"100%"} height={44}>
-                Criar grupo
-            </CustomButton>
         </View>
     );
 }
@@ -75,6 +59,8 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 30,
         paddingVertical: 50,
+        maxWidth: 1500,
+        width: "100%",
         backgroundColor: colors.background,
     },
     mainText: {
@@ -82,10 +68,9 @@ const styles = StyleSheet.create({
         marginBottom: 26,
         fontFamily: fontFamily.roboto.regular,
     },
-    infoText: {
-        fontSize: 16,
-        marginBottom: 20,
-        fontFamily: fontFamily.roboto.regular,
+    formContainer: {
+        marginBottom: 30,
+        gap: 20,
     },
     inputContainer: {
         gap: 4,
@@ -98,12 +83,28 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         fontFamily: fontFamily.roboto.regular,
     },
-    codeContainer: {
-        flex: 1,
-        gap: 10,
+    buttonContainer: {
+        marginTop: 20,
+    },
+    questionContainer: {
         alignItems: "center",
-        justifyContent: "center",
-        marginBottom: 20,
+        marginTop: 80,
+    },
+    questionText: {
+        fontFamily: fontFamily.roboto.regular,
+        fontSize: 18,
+        textAlign: "center",
+    },
+    loginSpan: {
+        color: colors.primary,
+        fontFamily: fontFamily.roboto.bold,
+        textDecorationLine: "underline",
+    },
+    errorText: {
+        color: "#ff375b",
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.regular,
+        marginTop: 4,
     },
     infoTextCode: {
         textAlign: "center",
@@ -116,5 +117,3 @@ const styles = StyleSheet.create({
         fontSize: 17,
     },
 });
-
-export default CreateGroup;

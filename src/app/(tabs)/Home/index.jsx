@@ -1,7 +1,6 @@
-import { View, Text, Image, StyleSheet, SafeAreaView } from "react-native";
-import { colors } from "../../styles/color";
-import { fontFamily } from "../../styles/fontFamily";
-import CustomButton from "../../components/Form/CustomButtom";
+import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
+import { colors } from "../../../styles/color";
+import { fontFamily } from "../../../styles/fontFamily";
 import React from "react";
 import { LayoutList, Hourglass, CircleCheck, Ban, UsersRound, ChartColumnIncreasing, ChevronRight } from "lucide-react-native";
 import { Link } from "expo-router";
@@ -18,7 +17,7 @@ const DashBoard = () => {
                 />
                 <View style={{ gap: 1 }}>
                     <Text style={styles.welcomeText}>
-                        Olá, <Text style={styles.spanText}>Ryan</Text>
+                        Olá, <Text style={styles.spanText}>Rilverton</Text>
                     </Text>
                     <Text style={styles.groupText}>Família Rodrigues</Text>
                 </View>
@@ -86,7 +85,7 @@ const DashBoard = () => {
                     Ações
                 </Text>
                 <View style={styles.actionBackground}>
-                    <View style={styles.itemContainerAction}>
+                    <TouchableOpacity style={styles.itemContainerAction}>
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
                             <UsersRound color={"#008012"} />
                         </View>
@@ -94,8 +93,8 @@ const DashBoard = () => {
                             <Text style={styles.actionText}>Ver informações do grupo familiar</Text>
                             <ChevronRight color={"#8B8B8B"} />
                         </View>
-                    </View>
-                    <View style={styles.itemContainerAction}>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.itemContainerAction}>
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
                             <ChartColumnIncreasing color={"#008012"} />
                         </View>
@@ -103,7 +102,7 @@ const DashBoard = () => {
                             <Text style={styles.actionText}>Encerrar o ciclo de mesada e consultar sugestão de valor</Text>
                             <ChevronRight color={"#8B8B8B"} />
                         </View>
-                    </View>
+                    </TouchableOpacity>
                     
                 </View>
             </View>

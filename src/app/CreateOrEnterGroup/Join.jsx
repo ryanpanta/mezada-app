@@ -10,19 +10,22 @@ function JoinGroup() {
     const [code, setCode] = React.useState("");
     return (
         <View style={styles.container}>
-            <HeaderCustom title="Entrar em um grupo familiar" />
-            <View style={{flex: 1}}>
-            <Text style={styles.mainText}>
-              Insira o código do grupo compartilhado por sua família para participar.
-            </Text>
-            <View style={styles.inputContainer}>
-                <TextInput
-                    style={styles.input}
-                    onChangeText={setCode}
-                    value={code}
-                    placeholder="Código do grupo 6 dígitos"
-                />
+            <View style={{ marginBottom: 26 }}>
+                <HeaderCustom title="Entrar em um grupo familiar" />
             </View>
+            <View style={{ flex: 1 }}>
+                <Text style={styles.mainText}>
+                    Insira o código do grupo compartilhado por sua família para
+                    participar.
+                </Text>
+                <View style={styles.inputContainer}>
+                    <TextInput
+                        style={styles.input}
+                        onChangeText={setCode}
+                        value={code}
+                        placeholder="Código do grupo 6 dígitos"
+                    />
+                </View>
             </View>
             <CustomButton width={"100%"} height={44}>
                 Entrar no grupo
@@ -59,8 +62,6 @@ const styles = StyleSheet.create({
         paddingVertical: 4,
         fontFamily: fontFamily.roboto.regular,
     },
-   
-    
 });
 
 export default JoinGroup;

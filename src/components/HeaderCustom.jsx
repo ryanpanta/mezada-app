@@ -14,7 +14,7 @@ export default function HeaderCustom({ title }) {
                 alignItems: "center",
                 backgroundColor: colors.background,
                 paddingTop: 8,
-                marginBottom: 26,
+                
                 maxWidth: "90%",
             }}
         >
