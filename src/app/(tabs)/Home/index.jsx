@@ -1,11 +1,29 @@
-import { View, Text, Image, StyleSheet, SafeAreaView, TouchableOpacity } from "react-native";
+import {
+    View,
+    Text,
+    Image,
+    StyleSheet,
+    SafeAreaView,
+    TouchableOpacity,
+} from "react-native";
 import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
 import React from "react";
-import { LayoutList, Hourglass, CircleCheck, Ban, UsersRound, ChartColumnIncreasing, ChevronRight } from "lucide-react-native";
+import {
+    LayoutList,
+    Hourglass,
+    CircleCheck,
+    Ban,
+    UsersRound,
+    ChartColumnIncreasing,
+    ChevronRight,
+} from "lucide-react-native";
 import { Link } from "expo-router";
+import { useRouter } from "expo-router";
+import Pie from "react-native-pie";
 
 const DashBoard = () => {
+    const route = useRouter();
     return (
         <View style={styles.container}>
             <View style={styles.welcome}>
@@ -81,29 +99,54 @@ const DashBoard = () => {
             </View>
 
             <View style={styles.actionsContainer}>
-                <Text style={styles.titleSection}>
-                    Ações
-                </Text>
+                <Text style={styles.titleSection}>Ações</Text>
                 <View style={styles.actionBackground}>
-                    <TouchableOpacity style={styles.itemContainerAction}>
+                    <TouchableOpacity
+                        style={styles.itemContainerAction}
+                        onPress={() => {
+                            route.push("/Home/GroupInformation");
+                        }}
+                    >
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
                             <UsersRound color={"#008012"} />
                         </View>
-                        <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between"}}>
-                            <Text style={styles.actionText}>Ver informações do grupo familiar</Text>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                            }}
+                        >
+                            <Text style={styles.actionText}>
+                                Ver informações do grupo familiar
+                            </Text>
                             <ChevronRight color={"#8B8B8B"} />
                         </View>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.itemContainerAction}>
+                    <TouchableOpacity
+                        style={styles.itemContainerAction}
+                        onPress={() => {
+                            route.push("/Home/CloseCycle");
+                        }}
+                    >
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
                             <ChartColumnIncreasing color={"#008012"} />
                         </View>
-                        <View style={{flexDirection: "row", alignItems: "center", justifyContent: "space-between", flex: 1}}>
-                            <Text style={styles.actionText}>Encerrar o ciclo de mesada e consultar sugestão de valor</Text>
+                        <View
+                            style={{
+                                flexDirection: "row",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                flex: 1,
+                            }}
+                        >
+                            <Text style={styles.actionText}>
+                                Encerrar o ciclo de mesada e consultar sugestão
+                                de valor
+                            </Text>
                             <ChevronRight color={"#8B8B8B"} />
                         </View>
                     </TouchableOpacity>
-                    
                 </View>
             </View>
         </View>
@@ -171,47 +214,39 @@ const styles = StyleSheet.create({
         gap: 30,
         flexWrap: "wrap",
         maxWidth: "100%",
-        
     },
 
     itemContainer: {
         flexDirection: "row",
         justifyContent: "flex-start",
         gap: 10,
-        
     },
     itemContainerAction: {
         flexDirection: "row",
         alignItems: "center",
         gap: 10,
-
     },
     wrapper: {
         alignItems: "center",
         justifyContent: "center",
         borderRadius: "50%",
         padding: 12,
-        
     },
     totalWrapper: {
         backgroundColor: "#BABABA",
         boxShadow: "0px 4px 15px 4px rgba(186, 186, 186, 0.6)",
-        
     },
     waitingWrapper: {
         backgroundColor: "#EAE793",
         boxShadow: "0px 4px 15px 4px rgba(234, 231, 147, 0.6)",
-
     },
     approvedWrapper: {
         backgroundColor: "#7ED68A",
         boxShadow: "0px 4px 15px 4px rgba(126, 214, 138, 0.6)",
-
     },
     rejectedWrapper: {
         backgroundColor: "#F1A0A0",
         boxShadow: "0px 4px 15px 4px rgba(241, 160, 160, 0.6)",
-
     },
     countValue: {
         fontFamily: fontFamily.roboto.bold,
@@ -227,9 +262,8 @@ const styles = StyleSheet.create({
         fontFamily: fontFamily.roboto.regular,
         fontSize: 16,
         color: colors.black,
-        maxWidth: "90%"
-        
-    }
+        maxWidth: "90%",
+    },
 });
 
 export default DashBoard;

@@ -5,67 +5,35 @@ import HeaderCustom from "../../../components/HeaderCustom";
 import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
 import { CopyCheck } from "lucide-react-native";
+import PieChart from "../../../components/Charts/PieChart";
+import BarChart from "../../../components/Charts/BarChart";
 
-export default function GroupInformation() {
+export default function CloseCycle() {
     return (
-        <View style={styles.container}>
+        <ScrollView style={styles.container}>
             <View style={{ marginBottom: 26 }}>
-                <HeaderCustom title="Informações do Grupo" />
+                <HeaderCustom title="Encerrar o Ciclo" />
             </View>
-            <Text style={styles.sectionTitle}>Informações Principais</Text>
+            <Text style={styles.mainText}>
+                Ao encerrar o ciclo de mesada, todas as tarefas aprovadas serão
+                contabilizadas. Você poderá visualizar gráficos de desempenho e
+                sugerir um valor de mesada com base nos pontos acumulados.
+            </Text>
+            <Text style={styles.sectionTitle}>Relatório Gráficos</Text>
             <View style={styles.background}>
-                <Text style={styles.label}>Nome do Grupo</Text>
-                <Text style={styles.groupName}>Família Rodrigues</Text>
-                <Text style={styles.label}>Código do Grupo</Text>
-                <CustomButton type="secondary" width={200} height={50}>
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            alignItems: "center",
-                            gap: 8,
-                        }}
-                    >
-                        <Text
-                            style={{
-                                color: "#52A75E",
-                                fontFamily: fontFamily.roboto.bold,
-                                fontSize: 20,
-                            }}
-                        >
-                            #A34B80
-                        </Text>
-                        <CopyCheck color={colors.primary} />
-                    </View>
-                </CustomButton>
-                <Text style={styles.infoTextCode}>
-                    Este é o
-                    <Text style={styles.infoTextCodeSpan}>código único</Text> do
-                    seu <Text style={styles.infoTextCodeSpan}>grupo</Text>.
-                    Compartilhe-o com sua família para que possam se juntar ao
-                    grupo.{" "}
-                    <Text style={styles.infoTextCodeSpan}>
-                        Clique para copiar.
-                    </Text>
-                </Text>
+                <View style={{ gap: 30 }}>
+                    <PieChart legend="Status tarefas" />
+                    <BarChart legend="Maiores pontos" />
+                </View>
             </View>
-            <Text style={styles.sectionTitle}>Usuários</Text>
+            <Text style={styles.sectionTitle}>Sugestão de Mesada</Text>
             <View style={styles.background}>
-                <FlatList
-                    data={[
-                        { name: "João Pena", role: 2 },
-                        { name: "Maria Lurder", role: 2 },
-                        { name: "José Afonso", role: 2 },
-                        { name: "Ryan Rodrigo", role: 1 },
-                    ]}
-                    renderItem={({ item }) => (
-                        <Text style={styles.user}>
-                            {item.name} -{" "}
-                            {item.role === 1 ? "mãe/pai" : "filho(a)"}
-                        </Text>
-                    )}
-                />
+                <Text style={styles.label}>Filho(a)</Text>
+                <Text style={styles.mainText}>Ryan Rodrigues</Text>
+                <Text style={styles.label}>Pontos</Text>
+                <Text style={styles.mainText}>23 pontos</Text>
             </View>
-        </View>
+        </ScrollView>
     );
 }
 
