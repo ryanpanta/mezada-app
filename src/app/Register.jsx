@@ -1,8 +1,14 @@
 import React from "react";
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from "react-native";
+import {
+    View,
+    Text,
+    TextInput,
+    StyleSheet,
+    TouchableOpacity,
+} from "react-native";
 import Porquinho from "../assets/porquinho.svg";
 import CustomButton from "../components/Form/CustomButtom";
-import { Eye, EyeOff } from "lucide-react-native"
+import { Eye, EyeOff } from "lucide-react-native";
 import { colors } from "../styles/color";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { fontFamily } from "../styles/fontFamily";
@@ -29,7 +35,6 @@ const schema = yup.object().shape({
 });
 
 export default function Register() {
-
     const router = useRouter();
 
     const {
@@ -43,9 +48,25 @@ export default function Register() {
     const [showPassword, setShowPassword] = React.useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
-    function handleRegister(data) {
-        router.replace('/(tabs)/Home');
-        console.log(data);
+    async function handleRegister(data) {
+        const { ConfirmPassword, ...filteredData } = data;
+        console.log("Dados enviados:", filteredData);
+        try {
+            const response = await fetch("http://192.168.0.108:5003/api/Users", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(filteredData),
+            });
+            console.log("Status da resposta:", response.status);
+            const responseData = await response.json();
+            
+        } catch (error) {
+            console.error("Erro detalhado:", error);
+        console.error("Mensagem:", error.message);
+        console.error("Stack trace:", error.stack);
+        }
     }
 
     return (
@@ -61,7 +82,7 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="name"
+                            name="Name"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -87,7 +108,7 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="email"
+                            name="Email"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -110,13 +131,15 @@ export default function Register() {
                     )}
                 </View>
 
-                 {/* Senha */}
-                 <View>
+                {/* Senha */}
+                <View>
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="password"
-                            render={({ field: { onChange, onBlur, value } }) => (
+                            name="Password"
+                            render={({
+                                field: { onChange, onBlur, value },
+                            }) => (
                                 <View style={styles.passwordWrapper}>
                                     <TextInput
                                         style={styles.input}
@@ -126,15 +149,32 @@ export default function Register() {
                                         placeholder="Senha"
                                         secureTextEntry={!showPassword}
                                     />
-                                    <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowPassword(!showPassword)}>
-                                        {showPassword ? <EyeOff size={24} color={colors.gray[400]} /> : <Eye color={colors.gray[400]} size={24} />}
+                                    <TouchableOpacity
+                                        style={styles.eyeIcon}
+                                        onPress={() =>
+                                            setShowPassword(!showPassword)
+                                        }
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff
+                                                size={24}
+                                                color={colors.gray[400]}
+                                            />
+                                        ) : (
+                                            <Eye
+                                                color={colors.gray[400]}
+                                                size={24}
+                                            />
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             )}
                         />
                     </View>
                     {errors.password && (
-                        <Text style={styles.errorText}>{errors.password.message}</Text>
+                        <Text style={styles.errorText}>
+                            {errors.password.message}
+                        </Text>
                     )}
                 </View>
 
@@ -143,8 +183,10 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="confirmPassword"
-                            render={({ field: { onChange, onBlur, value } }) => (
+                            name="ConfirmPassword"
+                            render={({
+                                field: { onChange, onBlur, value },
+                            }) => (
                                 <View style={styles.passwordWrapper}>
                                     <TextInput
                                         style={styles.input}
@@ -154,15 +196,34 @@ export default function Register() {
                                         placeholder="Confirmação de Senha"
                                         secureTextEntry={!showConfirmPassword}
                                     />
-                                    <TouchableOpacity style={styles.eyeIcon} onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-                                        {showConfirmPassword ? <EyeOff color={colors.gray[400]} size={24} /> : <Eye color={colors.gray[400]} size={24} />}
+                                    <TouchableOpacity
+                                        style={styles.eyeIcon}
+                                        onPress={() =>
+                                            setShowConfirmPassword(
+                                                !showConfirmPassword
+                                            )
+                                        }
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff
+                                                color={colors.gray[400]}
+                                                size={24}
+                                            />
+                                        ) : (
+                                            <Eye
+                                                color={colors.gray[400]}
+                                                size={24}
+                                            />
+                                        )}
                                     </TouchableOpacity>
                                 </View>
                             )}
                         />
                     </View>
                     {errors.confirmPassword && (
-                        <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>
+                        <Text style={styles.errorText}>
+                            {errors.confirmPassword.message}
+                        </Text>
                     )}
                 </View>
                 {/* Botão de Cadastro */}
@@ -243,9 +304,9 @@ const styles = StyleSheet.create({
     },
     passwordWrapper: {
         flexDirection: "row",
-        justifyContent: "space-between"
+        justifyContent: "space-between",
     },
     eyeIcon: {
         paddingRight: 10,
-    }
+    },
 });
