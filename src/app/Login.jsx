@@ -19,6 +19,7 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
 import api from "../services/api";
 import { loginUser } from "../services/endpoints";
+import Toast from "react-native-toast-message";
 
 const schema = yup.object().shape({
     email: yup
@@ -32,6 +33,18 @@ const schema = yup.object().shape({
 });
 
 export default function Login() {
+   
+    function showToast(message, type) {
+        Toast.show({
+            type: type,
+            position: "top",
+            text1: type === "success" ? "Sucesso" : "Erro",
+            text2: message,
+            visibilityTime: 4000,
+            autoHide: true,
+            textStyle: { fontSize: 28 }, 
+        });
+    } 
 
     const router = useRouter();
 
@@ -50,11 +63,17 @@ export default function Login() {
         try {
             const response = await loginUser(data);
             console.log(response.data);
-            console.log(response.status)
+
+            if (response.status === 200) {
+                showToast(response.data.message, "success");
+            }
             //router.replace("/CreateOrEnterGroup");
-        }
-        catch (error) {
-            console.error("Erro ao logar:", error.response?.data?.message || error.message);
+        } catch (error) {
+            showToast(error.response?.data?.message || error.message, "error");
+            console.error(
+                "Erro ao logar:",
+                error.response?.data?.message || error.message
+            );
         }
     }
 
