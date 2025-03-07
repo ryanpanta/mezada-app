@@ -17,16 +17,18 @@ import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
+import api from "../services/api";
+import { loginUser } from "../services/endpoints";
 
 const schema = yup.object().shape({
-    // email: yup
-    //     .string()
-    //     .email("E-mail inválido")
-    //     .required("O e-mail é obrigatório"),
-    // password: yup
-    //     .string()
-    //     .min(6, "A senha deve ter pelo menos 6 caracteres")
-    //     .required("A senha é obrigatória"),
+    email: yup
+        .string()
+        .email("E-mail inválido")
+        .required("O e-mail é obrigatório"),
+    password: yup
+        .string()
+        .min(6, "A senha deve ter pelo menos 6 caracteres")
+        .required("A senha é obrigatória"),
 });
 
 export default function Login() {
@@ -43,10 +45,17 @@ export default function Login() {
 
     const [showPassword, setShowPassword] = React.useState(false);
 
-    function handleLogin(data) {
-        router.replace('/CreateOrEnterGroup');
-
-        console.log(data);
+    async function handleLogin(data) {
+        //router.replace('/CreateOrEnterGroup');
+        try {
+            const response = await loginUser(data);
+            console.log(response.data);
+            console.log(response.status)
+            //router.replace("/CreateOrEnterGroup");
+        }
+        catch (error) {
+            console.error("Erro ao logar:", error.response?.data?.message || error.message);
+        }
     }
 
     return (

@@ -17,9 +17,10 @@ import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { useRouter } from "expo-router";
+import { registerUser } from "../services/endpoints";
 
 const schema = yup.object().shape({
-    /* name: yup.string().required("O nome é obrigatório"),
+    name: yup.string().required("O nome é obrigatório"),
     email: yup
         .string()
         .email("E-mail inválido")
@@ -31,7 +32,7 @@ const schema = yup.object().shape({
     confirmPassword: yup
         .string()
         .oneOf([yup.ref("password"), null], "As senhas não são iguais")
-        .required("A confirmação de senha é obrigatória"), */
+        .required("A confirmação de senha é obrigatória"),
 });
 
 export default function Register() {
@@ -49,23 +50,12 @@ export default function Register() {
     const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
 
     async function handleRegister(data) {
-        const { ConfirmPassword, ...filteredData } = data;
-        console.log("Dados enviados:", filteredData);
+        const { confirmPassword, ...filteredData } = data;
         try {
-            const response = await fetch("http://192.168.0.108:5003/api/Users", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(filteredData),
-            });
-            console.log("Status da resposta:", response.status);
-            const responseData = await response.json();
-            
+            const response = await registerUser(filteredData);
+            console.log(response);
         } catch (error) {
-            console.error("Erro detalhado:", error);
-        console.error("Mensagem:", error.message);
-        console.error("Stack trace:", error.stack);
+            console.error("Erro ao registrar:", error.response?.data?.message || error.message);
         }
     }
 
@@ -82,7 +72,7 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="Name"
+                            name="name"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -108,7 +98,7 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="Email"
+                            name="email"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -136,7 +126,7 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="Password"
+                            name="password"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -183,7 +173,7 @@ export default function Register() {
                     <View style={styles.inputContainer}>
                         <Controller
                             control={control}
-                            name="ConfirmPassword"
+                            name="confirmPassword"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
