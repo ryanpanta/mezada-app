@@ -16,8 +16,9 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useRouter } from "expo-router";
 import { registerUser } from "../services/endpoints";
+import { showToast } from "./helpers/showToast";
+import { useAuth } from "../contexts/AuthContext";
 
 const schema = yup.object().shape({
     name: yup.string().required("O nome é obrigatório"),
@@ -36,7 +37,8 @@ const schema = yup.object().shape({
 });
 
 export default function Register() {
-    const router = useRouter();
+
+    const {login} = useAuth();
 
     const {
         control,
@@ -53,9 +55,14 @@ export default function Register() {
         const { confirmPassword, ...filteredData } = data;
         try {
             const response = await registerUser(filteredData);
-            console.log(response);
+            if(response.status === 200) {
+                showToast(response.data.Message, "success");
+                await login(filteredData);
+            }
+            
         } catch (error) {
             console.error("Erro ao registrar:", error.response?.data?.message || error.message);
+            showToast(error.response?.data?.message || error.message, "error");
         }
     }
 

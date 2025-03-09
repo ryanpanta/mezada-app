@@ -23,6 +23,15 @@ export const loginUser = async (userData) => {
         const response = await api.post("/Users/login", userData);
         return response;
     } catch (error) {
-        throw error;
+        throw error; 
     }
 };
+
+export const getCurrentUser = async () => {
+    try {
+        const response = await api.get("/Users/me");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}

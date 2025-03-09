@@ -16,6 +16,7 @@ import {
     PlayfairDisplay_800ExtraBold,
 } from "@expo-google-fonts/playfair-display";
 import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
+import { AuthProvider } from "../contexts/AuthContext";
 
 export default function Layout() {
     const toastConfig = {
@@ -66,8 +67,10 @@ export default function Layout() {
 
     return (
         <>
-            <Stack screenOptions={{ headerShown: false }} />
-            <Toast config={toastConfig} />
+            <AuthProvider>
+                <Stack screenOptions={{ headerShown: false }} />
+                <Toast config={toastConfig} />
+            </AuthProvider>
         </>
     );
 }

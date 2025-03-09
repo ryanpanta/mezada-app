@@ -4,8 +4,23 @@ import { colors } from "../styles/color";
 import { fontFamily } from "../styles/fontFamily";
 import PorquinhoIndex from "../assets/porquinho-home.svg";
 import CustomButton from "../components/Form/CustomButtom";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import { useAuth } from "../contexts/AuthContext";
 export default function Home() {
+    const { isLogged, loading } = useAuth();
+
+    if (loading) {
+        return <Text>Carregando...</Text>;
+    }
+
+    const router = useRouter();
+
+    React.useEffect(() => {
+        if (isLogged) {
+            router.replace("/CreateOrEnterGroup");
+        }
+    }, []);
+
     return (
         <View style={styles.container}>
             <View style={styles.containerText}>

@@ -5,9 +5,12 @@ import { colors } from "../../styles/color";
 import { fontFamily } from "../../styles/fontFamily";
 import CustomButton from "../../components/Form/CustomButtom";
 import { useRouter } from "expo-router";
+import { useAuth } from "../../contexts/AuthContext";
 
 function CreateOrEnterGroup() {
 
+    const {user} = useAuth();
+    console.log(user);
     const router = useRouter();
 
     async function getAvatar() {
@@ -29,7 +32,7 @@ function CreateOrEnterGroup() {
                         uri: "https://ui-avatars.com/api/?name=Ryan+Rodrigues&background=52A75E&color=EEFFEE&size=36",
                     }}
                 />
-                <Text style={styles.welcomeText}>Olá, <Text style={styles.spanText}>Ryan</Text></Text>
+                <Text style={styles.welcomeText}>Olá, <Text style={styles.spanText}>{(user.name).split(' ')[0]}</Text></Text>
             </View>
             <Text style={{fontSize: 18, marginTop: 30, marginBottom: 30 }}>Você ainda não faz parte de um grupo familiar. Escolha como deseja começar:</Text>
             <View style={[styles.optionContainer, styles.optionSon]}>

@@ -12,6 +12,7 @@
     "@expo-google-fonts/playfair-display": "^0.2.3",
     "@expo-google-fonts/roboto": "^0.2.3",
     "@hookform/resolvers": "^3.10.0",
+    "@react-native-async-storage/async-storage": "^2.1.2",
     "@react-native-community/art": "^1.1.2",
     "axios": "^1.8.1",
     "d3": "^7.9.0",

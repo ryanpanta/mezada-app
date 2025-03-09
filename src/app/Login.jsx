@@ -16,10 +16,7 @@ import { Link } from "expo-router";
 import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
-import { useRouter } from "expo-router";
-import api from "../services/api";
-import { loginUser } from "../services/endpoints";
-import Toast from "react-native-toast-message";
+import { useAuth } from "../contexts/AuthContext";
 
 const schema = yup.object().shape({
     email: yup
@@ -33,20 +30,8 @@ const schema = yup.object().shape({
 });
 
 export default function Login() {
-   
-    function showToast(message, type) {
-        Toast.show({
-            type: type,
-            position: "top",
-            text1: type === "success" ? "Sucesso" : "Erro",
-            text2: message,
-            visibilityTime: 4000,
-            autoHide: true,
-            textStyle: { fontSize: 28 }, 
-        });
-    } 
 
-    const router = useRouter();
+    const { login} = useAuth();
 
     const {
         control,
@@ -59,22 +44,7 @@ export default function Login() {
     const [showPassword, setShowPassword] = React.useState(false);
 
     async function handleLogin(data) {
-        //router.replace('/CreateOrEnterGroup');
-        try {
-            const response = await loginUser(data);
-            console.log(response.data);
-
-            if (response.status === 200) {
-                showToast(response.data.message, "success");
-            }
-            //router.replace("/CreateOrEnterGroup");
-        } catch (error) {
-            showToast(error.response?.data?.message || error.message, "error");
-            console.error(
-                "Erro ao logar:",
-                error.response?.data?.message || error.message
-            );
-        }
+        await login(data);
     }
 
     return (
