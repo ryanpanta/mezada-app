@@ -9,6 +9,8 @@ import api from "./api";
 //   }
 // };
 
+
+// users
 export const registerUser = async (userData) => {
     try {
         const response = await api.post("/Users/register", userData);
@@ -30,6 +32,25 @@ export const loginUser = async (userData) => {
 export const getCurrentUser = async () => {
     try {
         const response = await api.get("/Users/me");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// familygroups
+export const createFamilyGroup = async (nameFamilyGroup) => {
+    try {
+        const response = await api.post("/FamilyGroups/create", nameFamilyGroup);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const joinFamilyGroup = async (hashFamilyGroup) => {
+    try {
+        const response = await api.post("/FamilyGroups/join", hashFamilyGroup);
         return response;
     } catch (error) {
         throw error;

@@ -5,9 +5,26 @@ import { fontFamily } from "../../styles/fontFamily";
 import { colors } from "../../styles/color";
 import HeaderCustom from "../../components/HeaderCustom";
 import { CopyCheck } from "lucide-react-native";
+import { showToast } from "../helpers/showToast";
+import { createFamilyGroup } from "../../services/endpoints";
 
 function CreateGroup() {
     const [name, setName] = React.useState("");
+
+    async function handleClick() {
+        try {
+            const response = await createFamilyGroup({name: name});
+            
+            if(response.status === 200) {
+                console.log("Grupo criado com sucesso!");
+                showToast("Grupo criado com sucesso!", "success");
+            }
+        }
+        catch (error) {
+            showToast("Erro ao criar grupo, tente novamente mais tarde", "error");
+            console.log(error);
+        }
+    }
     return (
         <View style={styles.container}>
             <View style={{ marginBottom: 26 }}>
@@ -63,7 +80,7 @@ function CreateGroup() {
                     </Text>
                 </Text>
             </View>
-            <CustomButton width={"100%"} height={44}>
+            <CustomButton width={"100%"} height={44} onPress={handleClick}>
                 Criar grupo
             </CustomButton>
         </View>
