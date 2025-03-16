@@ -8,6 +8,12 @@ const api = axios.create({
   }
 });
 
+let activeRequests = 0; 
+
+const setLoading = (isLoading) => {
+    console.log(`[API] Loading: ${isLoading}`);
+};
+
 api.interceptors.request.use(
   async (config) => {
       const userId = await AsyncStorage.getItem('userId');

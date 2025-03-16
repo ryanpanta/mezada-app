@@ -24,6 +24,7 @@ import Pie from "react-native-pie";
 import { useAuth } from "../../../contexts/AuthContext";
 import { formatFirstName } from "../../../helpers/formatFirstName";
 import { getFamilyGroup, getTaskStats } from "../../../services/endpoints";
+import UserPhoto from "../../../components/UserPhoto/UserPhoto";
 
 const DashBoard = () => {
     const route = useRouter();
@@ -68,12 +69,7 @@ const DashBoard = () => {
     return (
         <View style={styles.container}>
             <View style={styles.welcome}>
-                <Image
-                    style={styles.avatarIcon}
-                    source={{
-                        uri: "https://ui-avatars.com/api/?name=Ryan+Rodrigues&background=52A75E&color=EEFFEE&size=36",
-                    }}
-                />
+                <UserPhoto width={36} />
                 <View style={{ gap: 1 }}>
                     <Text style={styles.welcomeText}>
                         Olá,{" "}

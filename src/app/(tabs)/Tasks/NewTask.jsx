@@ -8,11 +8,17 @@ import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import CustomButton from "../../../components/Form/CustomButtom";
 import { useRouter } from "expo-router";
+import { showToast } from "../../../helpers/showToast";
+import { createTask } from "../../../services/endpoints";
 
 const schema = yup.object().shape({
     title: yup.string().required("O título é obrigatório").max(100),
     description: yup.string().required("A descrição é obrigatória").max(500),
-    points: yup.number().moreThan(0).required("Os pontos são obrigatórios").max(5),
+    points: yup
+        .number()
+        .moreThan(0)
+        .required("Os pontos são obrigatórios")
+        .max(5),
 });
 
 export default function NewTask() {
@@ -26,10 +32,21 @@ export default function NewTask() {
 
     const router = useRouter();
 
-    function handleNewTask(data) {
+    async function handleNewTask(data) {
         console.log(data);
-
-        router.replace("/Tasks");
+        try {
+            const response = await createTask(data);
+            if (response.status === 201) {
+                showToast("Tarefa criada com sucesso!", "success");
+                router.replace("/Tasks");
+            }
+        } catch (error) {
+            console.log(error);
+            showToast(
+                "Erro ao criar tarefa, tente novamente mais tarde",
+                "error"
+            );
+        }
     }
     return (
         <View style={styles.container}>

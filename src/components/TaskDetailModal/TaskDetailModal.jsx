@@ -12,14 +12,18 @@ import { colors } from "../../styles/color";
 import CustomButton from "../Form/CustomButtom";
 import React from "react";
 import { X } from "lucide-react-native";
+import { formatDate } from "../../helpers/formatDate";
+import { useAuth } from "../../contexts/AuthContext";
+import { enumRole } from "../../utils/enumRole";
 export function TaskDetailModal({ task, setOpenModal }) {
     console.log(task);
+    const { user } = useAuth();
     const modalRef = React.useRef(null);
     return (
         <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
             <View style={styles.container}>
                 <View style={styles.modal}>
-                    {/* create a touchablebutton like a X, that setOpenModal false */}
+                    
                     <Pressable
                         style={{
                             position: "absolute",
@@ -29,36 +33,56 @@ export function TaskDetailModal({ task, setOpenModal }) {
                         }}
                         onPress={() => setOpenModal(false)}
                     >
-                            <X color={colors.gray[600]} size={20} />
+                        <X color={colors.gray[600]} size={20} />
                     </Pressable>
                     <Text style={styles.label}>Título</Text>
-                    <Text style={styles.title}>{task.title}</Text>
+                    <Text style={styles.title}>{task?.title}</Text>
                     <Text style={styles.label}>Descrição</Text>
-                    <Text style={styles.info}>{task.description}</Text>
+                    <Text style={styles.info}>{task?.description}</Text>
                     <View style={{ flexDirection: "row", gap: 80 }}>
                         <View>
                             <Text style={styles.label}>Pontos</Text>
-                            <Text style={styles.info}>{task.points}</Text>
+                            <Text style={styles.info}>{task?.points}</Text>
                         </View>
                         <View>
                             <Text style={styles.label}>Data de criação</Text>
-                            <Text style={styles.info}>{task.date}</Text>
+                            <Text style={styles.info}>
+                                {formatDate(task?.createdAt)}
+                            </Text>
                         </View>
                     </View>
                     <View style={styles.containerButton}>
-                        <CustomButton
-                            fontSize={18}
-                            width={140}
-                            height={40}
-                            color="#E75E5E"
-                            backgroundColor="transparent"
-                        >
-                            Rejeitar
-                        </CustomButton>
+                        {user.role === enumRole.PARENT ? (
+                            <>
+                                <CustomButton
+                                    fontSize={18}
+                                    width={140}
+                                    height={40}
+                                    color="#E75E5E"
+                                    backgroundColor="transparent"
+                                >
+                                    Rejeitar
+                                </CustomButton>
 
-                        <CustomButton fontSize={18} width={140} height={40}>
-                            Aprovar
-                        </CustomButton>
+                                <CustomButton
+                                    fontSize={18}
+                                    width={140}
+                                    height={40}
+                                >
+                                    Aprovar
+                                </CustomButton>
+                            </>
+                        ) : (
+                            <CustomButton
+                                    fontSize={16}
+                                    width={120}
+                                    height={40}
+                                    color="#E75E5E"
+                                    backgroundColor="#FFF2F2"
+                                >
+                                    Excluir
+                                </CustomButton>
+                        )}
                     </View>
                 </View>
             </View>

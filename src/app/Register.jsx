@@ -17,7 +17,7 @@ import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import { registerUser } from "../services/endpoints";
-import { showToast } from "./helpers/showToast";
+import { showToast } from "../helpers/showToast";
 import { useAuth } from "../contexts/AuthContext";
 
 const schema = yup.object().shape({

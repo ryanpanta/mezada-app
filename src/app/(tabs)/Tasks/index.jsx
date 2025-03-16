@@ -17,7 +17,7 @@ import { useRouter } from "expo-router";
 import { TaskDetailModal } from "../../../components/TaskDetailModal/TaskDetailModal";
 import { getTask, getTasks } from "../../../services/endpoints";
 import { showToast } from "../../../helpers/showToast";
-
+import { formatDate } from "../../../helpers/formatDate";
 
 export default function Tasks() {
     const router = useRouter();
@@ -41,18 +41,37 @@ export default function Tasks() {
         fetchTasks();
     }, [active]);
     
-    /* const tasks = [
-        { id: 1, title: "Tirei nota 10 em Matemática", status: "Pendente", date: "12 Jan 2025", points: "3", description: "Estudei bastante para a prova e consegui tirar nota máxima." },
-        { id: 2, title: "Finalizar projeto React Native", status: "Aprovada", date: "15 Fev 2025", points: "5", description: "Completei todas as funcionalidades do projeto." },
-        { id: 3, title: "Estudar Redux", status: "Rejeitada", date: "20 Mar 2025", points: "2", description: "Não consegui entender bem os conceitos de Redux." },
-        { id: 4, title: "Ler livro de JavaScript", status: "Pendente", date: "25 Abr 2025", points: "4", description: "Preciso ler o livro para melhorar minhas habilidades em JavaScript." },
-        { id: 5, title: "Participar de hackathon", status: "Aprovada", date: "30 Mai 2025", points: "6", description: "Participei de um hackathon e nosso time ganhou o segundo lugar." },
-        { id: 6, title: "Escrever artigo sobre React", status: "Pendente", date: "10 Jun 2025", points: "3", description: "Planejo escrever um artigo detalhado sobre React para o blog." },
-    ]; */
 
     function handlePress(task){
         setTaskDetail(task);
         setOpenModal(true);
+    }
+
+    function getStatusLabel(status){
+        if(status === 1){
+            return { 
+                label: "Pendente",
+                color: "#5F5C0F",
+                backgroundColor: "#EAE793",
+
+            };
+        }
+        if(status === 2){
+            return { 
+                label: "Aprovada",
+                color: "#007F12",
+                backgroundColor: "#7ED68A",
+
+            };
+        }
+        if(status === 3){
+            return { 
+                label: "Rejeitada",
+                color: "#720303",
+                backgroundColor: "#F1A0A0",
+
+            };
+        }
     }
 
     return (
@@ -86,7 +105,7 @@ export default function Tasks() {
                     <Text style={styles.filterText}>Todas </Text>
                     {(active === "" || active === "") && (
                         <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>25</Text>
+                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -95,7 +114,7 @@ export default function Tasks() {
                     <Text style={styles.filterText}>Pendentes</Text>
                     {active === 1 && (
                         <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>25</Text>
+                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -104,7 +123,7 @@ export default function Tasks() {
                     <Text style={styles.filterText}>Aprovadas</Text>
                     {active === 2 && (
                         <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>25</Text>
+                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -113,13 +132,13 @@ export default function Tasks() {
                     <Text style={styles.filterText}>Rejeitadas</Text>
                     {active === 3 && (
                         <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>25</Text>
+                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
                         </View>
                     )}
                 </TouchableOpacity>
             </ScrollView>
             <View style={{gap: 16, paddingBottom: 140}}>
-            {tasks.count > 0 ? tasks?.map((task, index) => (
+            {tasks.length > 0 ? tasks?.map((task, index) => (
                 <TouchableOpacity onPress={() => handlePress(task)} style={styles.itemContainer} key={index}>
                     <View
                         style={{
@@ -134,13 +153,13 @@ export default function Tasks() {
                     </View>
                     <View>
                         <CustomButton
-                            color="#5F5C0F"
-                            backgroundColor="#EAE793"
+                            color={getStatusLabel(task.status).color}
+                            backgroundColor={getStatusLabel(task.status).backgroundColor}
                             height={24}
                             width={100}
                             fontSize={14}
                         >
-                            {task.status}
+                            {getStatusLabel(task.status).label}
                         </CustomButton>
                     </View>
                     <View
@@ -165,7 +184,7 @@ export default function Tasks() {
                             >
                                 <Calendar color="#ADADAD" />
                                 <Text style={{ color: "#6B6B6B" }}>
-                                    {task.date}
+                                    {formatDate(task.createdAt)}
                                 </Text>
                             </View>
                             <View
@@ -185,7 +204,7 @@ export default function Tasks() {
                             <Image
                                 style={styles.avatarIcon}
                                 source={{
-                                    uri: "https://ui-avatars.com/api/?name=Ryan+Rodrigues&background=52A75E&color=EEFFEE&size=36",
+                                    uri: "https://ui-avatars.com/api/?name=Ryan+Rodrigues&background=52A75E&color=EEFFEE&size=38",
                                 }}
                             />
                         </View>
@@ -265,9 +284,13 @@ const styles = StyleSheet.create({
         paddingRight: 5,
     },
     filterCount: {
+        alignItems: "center",
+        justifyContent: "center",
         backgroundColor: colors.secondary,
-        borderRadius: 24,
+        borderRadius: '50%',
         padding: 4,
+        width: 20,
+        height: 20,
         marginLeft: 4,
     },
     filterCountText: {
