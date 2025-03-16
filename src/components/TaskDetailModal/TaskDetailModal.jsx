@@ -2,10 +2,9 @@ import {
     StyleSheet,
     Text,
     View,
-    Modal,
     Pressable,
-    TouchableOpacity,
     TouchableWithoutFeedback,
+    Alert,
 } from "react-native";
 import { fontFamily } from "../../styles/fontFamily";
 import { colors } from "../../styles/color";
@@ -15,10 +14,97 @@ import { X } from "lucide-react-native";
 import { formatDate } from "../../helpers/formatDate";
 import { useAuth } from "../../contexts/AuthContext";
 import { enumRole } from "../../utils/enumRole";
+import { showToast } from "../../helpers/showToast";
+import { deleteTask, setAsApprovedTask, setAsRejectedTask } from "../../services/endpoints";
+import { useRouter } from "expo-router";
 export function TaskDetailModal({ task, setOpenModal }) {
-    console.log(task);
     const { user } = useAuth();
     const modalRef = React.useRef(null);
+    const router = useRouter();
+    async function handleDeleteTask() {
+        Alert.alert(
+            "Confirmação",
+            "Deseja realmente excluir esta tarefa?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Excluir",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await deleteTask(task.id);
+                            if (response.status === 204) {
+                                showToast("Tarefa excluída com sucesso", "success");
+                                setOpenModal(false);
+                                router.replace("/Tasks"); // Garante atualização da página
+                            }
+                        } catch (error) {
+                            showToast("Erro ao excluir tarefa", "error");
+                            console.log(error);
+                        }
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    }
+
+    async function handleChangeApprovedTask() {
+        Alert.alert(
+            "Confirmação",
+            "Deseja realmente aprovar esta tarefa?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Aprovar",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await setAsApprovedTask(task.id);
+                            if (response.status === 204) {
+                                showToast("Tarefa aprovada com sucesso", "success");
+                                setOpenModal(false);
+                                router.replace("/Tasks");
+                            }
+                        } catch (error) {
+                            showToast("Erro ao aceitar tarefa", "error");
+                            console.log(error);
+                        }
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    }
+
+    async function handleChangeRejectedTask() {
+        Alert.alert(
+            "Confirmação",
+            "Deseja realmente rejeitar esta tarefa?",
+            [
+                { text: "Cancelar", style: "cancel" },
+                {
+                    text: "Rejeitar",
+                    style: "destructive",
+                    onPress: async () => {
+                        try {
+                            const response = await setAsRejectedTask(task.id);
+                            if (response.status === 204) {
+                                showToast("Tarefa rejeitada com sucesso", "success");
+                                setOpenModal(false);
+                                router.replace("/Tasks");
+                            }
+                        } catch (error) {
+                            showToast("Erro ao rejeitar tarefa", "error");
+                            console.log(error);
+                        }
+                    },
+                },
+            ],
+            { cancelable: true }
+        );
+    }
+
     return (
         <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
             <View style={styles.container}>
@@ -60,6 +146,7 @@ export function TaskDetailModal({ task, setOpenModal }) {
                                     height={40}
                                     color="#E75E5E"
                                     backgroundColor="transparent"
+                                    onPress={handleChangeRejectedTask}
                                 >
                                     Rejeitar
                                 </CustomButton>
@@ -68,6 +155,7 @@ export function TaskDetailModal({ task, setOpenModal }) {
                                     fontSize={18}
                                     width={140}
                                     height={40}
+                                    onPress={handleChangeApprovedTask}
                                 >
                                     Aprovar
                                 </CustomButton>
@@ -79,6 +167,7 @@ export function TaskDetailModal({ task, setOpenModal }) {
                                     height={40}
                                     color="#E75E5E"
                                     backgroundColor="#FFF2F2"
+                                    onPress={handleDeleteTask}
                                 >
                                     Excluir
                                 </CustomButton>

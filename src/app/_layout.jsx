@@ -17,8 +17,29 @@ import {
 } from "@expo-google-fonts/playfair-display";
 import Toast, { BaseToast, ErrorToast } from "react-native-toast-message";
 import { AuthProvider } from "../contexts/AuthContext";
+import { LoadingProvider, useLoading } from "../contexts/LoadingContext";
+import { setLoadingHandler } from "../services/api";
 
 export default function Layout() {
+
+    return (
+        <>
+            <LoadingProvider>
+                <AuthProvider>
+                    <RootLayoutContent />
+                </AuthProvider>
+            </LoadingProvider>
+        </>
+    );
+}
+
+function RootLayoutContent() {
+    const { setIsLoading } = useLoading();
+
+    React.useEffect(() => {
+        setLoadingHandler((isLoading) => setIsLoading(isLoading));
+    }, [setIsLoading]);
+
     const toastConfig = {
         success: (props) => (
             <BaseToast
@@ -67,10 +88,8 @@ export default function Layout() {
 
     return (
         <>
-            <AuthProvider>
-                <Stack screenOptions={{ headerShown: false }} />
-                <Toast config={toastConfig} />
-            </AuthProvider>
+            <Stack screenOptions={{ headerShown: false }} />
+            <Toast config={toastConfig} />
         </>
     );
 }

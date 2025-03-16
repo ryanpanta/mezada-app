@@ -6,6 +6,7 @@ import {
     ScrollView,
     Image,
     Modal,
+    ActivityIndicator,
 } from "react-native";
 import React from "react";
 import { colors } from "../../../styles/color";
@@ -18,19 +19,28 @@ import { TaskDetailModal } from "../../../components/TaskDetailModal/TaskDetailM
 import { getTask, getTasks } from "../../../services/endpoints";
 import { showToast } from "../../../helpers/showToast";
 import { formatDate } from "../../../helpers/formatDate";
+import { useLoading } from "../../../contexts/LoadingContext";
+import Loading from "../../../components/Helpers/Loading";
+import PorquinhoTriste from "../../../assets/porquinho-triste.svg";
+import { useAuth } from "../../../contexts/AuthContext";
+import { enumRole } from "../../../utils/enumRole";
+import OtherUserPhoto from "../../../components/UserPhoto/OtherUserPhoto";
 
 export default function Tasks() {
     const router = useRouter();
     const [active, setActive] = React.useState("");
     const [taskDetail, setTaskDetail] = React.useState(null);
     const [openModal, setOpenModal] = React.useState(false);
-    const [tasks, setTasks] = React.useState([]);
-    console.log(active);
+    const [tasks, setTasks] = React.useState(null);
+    console.log("TASKS ", tasks);
+    const { isLoading } = useLoading();
+    const { user } = useAuth();
+
     React.useEffect(() => {
         async function fetchTasks() {
             try {
                 const response = await getTasks(active);
-                if(response.status === 200){
+                if (response.status === 200) {
                     setTasks(response.data);
                 }
             } catch (error) {
@@ -40,184 +50,234 @@ export default function Tasks() {
         }
         fetchTasks();
     }, [active]);
-    
 
-    function handlePress(task){
+    function handlePress(task) {
         setTaskDetail(task);
         setOpenModal(true);
     }
 
-    function getStatusLabel(status){
-        if(status === 1){
-            return { 
+    function getStatusLabel(status) {
+        if (status === 1) {
+            return {
                 label: "Pendente",
                 color: "#5F5C0F",
                 backgroundColor: "#EAE793",
-
             };
         }
-        if(status === 2){
-            return { 
+        if (status === 2) {
+            return {
                 label: "Aprovada",
                 color: "#007F12",
                 backgroundColor: "#7ED68A",
-
             };
         }
-        if(status === 3){
-            return { 
+        if (status === 3) {
+            return {
                 label: "Rejeitada",
                 color: "#720303",
                 backgroundColor: "#F1A0A0",
-
             };
         }
     }
-
+    console.log(isLoading ? "simmm" : "nao");
     return (
-        <ScrollView style={styles.container}>
-            <View style={styles.headerContent}>
-                <HeaderCustom title="Lista de Tarefas" />
-                <CustomButton
-                    onPress={() => router.push("/Tasks/NewTask")}
-                    width={110}
-                    height={34}
-                    fontSize={14}
-                    type="secondary"
-                >
-                    + Adicionar
-                </CustomButton>
-            </View>
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                style={{ height: 30, maxHeight: 30, marginBottom: 20 }}
-                contentContainerStyle={{
-                    flexDirection: "row",
-                    gap: 10,
-                    maxHeight: 30,
-                }}
-            >
-                <TouchableOpacity
-                    style={[styles.filterButton, active === "" ? styles.active : null]}
-                    onPress={() => setActive("")}
-                >
-                    <Text style={styles.filterText}>Todas </Text>
-                    {(active === "" || active === "") && (
-                        <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.filterButton, active === 1 ? styles.active : null]}
-                    onPress={() => setActive(1)}>
-                    <Text style={styles.filterText}>Pendentes</Text>
-                    {active === 1 && (
-                        <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.filterButton, active === 2 ? styles.active : null]}
-                    onPress={() => setActive(2)}>
-                    <Text style={styles.filterText}>Aprovadas</Text>
-                    {active === 2 && (
-                        <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.filterButton, active === 3 ? styles.active : null]}
-                    onPress={() => setActive(3)}>
-                    <Text style={styles.filterText}>Rejeitadas</Text>
-                    {active === 3 && (
-                        <View style={styles.filterCount}>
-                            <Text style={styles.filterCountText}>{tasks?.length}</Text>
-                        </View>
-                    )}
-                </TouchableOpacity>
-            </ScrollView>
-            <View style={{gap: 16, paddingBottom: 140}}>
-            {tasks.length > 0 ? tasks?.map((task, index) => (
-                <TouchableOpacity onPress={() => handlePress(task)} style={styles.itemContainer} key={index}>
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                        }}
-                    >
-                        <Text style={styles.mainText}>
-                            {task.title}
-                        </Text>
-                        <Ellipsis color="#ADADAD" />
-                    </View>
-                    <View>
+        <>
+            {isLoading && <Loading />}
+            <ScrollView style={styles.container}>
+                <View style={styles.headerContent}>
+                    <HeaderCustom title="Lista de Tarefas" />
+                    {user?.role === enumRole.CHILD && (
                         <CustomButton
-                            color={getStatusLabel(task.status).color}
-                            backgroundColor={getStatusLabel(task.status).backgroundColor}
-                            height={24}
-                            width={100}
+                            onPress={() => router.push("/Tasks/NewTask")}
+                            width={110}
+                            height={34}
                             fontSize={14}
+                            type="secondary"
                         >
-                            {getStatusLabel(task.status).label}
+                            + Adicionar
                         </CustomButton>
-                    </View>
-                    <View
-                        style={{
-                            flexDirection: "row",
-                            justifyContent: "space-between",
-                        }}
+                    )}
+                </View>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{ height: 30, maxHeight: 30, marginBottom: 20 }}
+                    contentContainerStyle={{
+                        flexDirection: "row",
+                        gap: 10,
+                        maxHeight: 30,
+                    }}
+                >
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            active === "" ? styles.active : null,
+                        ]}
+                        onPress={() => setActive("")}
                     >
+                        <Text style={styles.filterText}>Todas </Text>
+                        {active === "" && (
+                            <View style={styles.filterCount}>
+                                <Text style={styles.filterCountText}>
+                                    {tasks?.length}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            active === 1 ? styles.active : null,
+                        ]}
+                        onPress={() => setActive(1)}
+                    >
+                        <Text style={styles.filterText}>Pendentes</Text>
+                        {active === 1 && (
+                            <View style={styles.filterCount}>
+                                <Text style={styles.filterCountText}>
+                                    {tasks?.length}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            active === 2 ? styles.active : null,
+                        ]}
+                        onPress={() => setActive(2)}
+                    >
+                        <Text style={styles.filterText}>Aprovadas</Text>
+                        {active === 2 && (
+                            <View style={styles.filterCount}>
+                                <Text style={styles.filterCountText}>
+                                    {tasks?.length}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.filterButton,
+                            active === 3 ? styles.active : null,
+                        ]}
+                        onPress={() => setActive(3)}
+                    >
+                        <Text style={styles.filterText}>Rejeitadas</Text>
+                        {active === 3 && (
+                            <View style={styles.filterCount}>
+                                <Text style={styles.filterCountText}>
+                                    {tasks?.length}
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </ScrollView>
+
+                <View style={{ gap: 16, paddingBottom: 140 }}>
+                    {tasks && tasks.length > 0 ? (
+                        tasks?.map((task, index) => (
+                            <TouchableOpacity
+                                onPress={() => handlePress(task)}
+                                style={styles.itemContainer}
+                                key={index}
+                            >
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        justifyContent: "space-between",
+                                    }}
+                                >
+                                    <Text style={styles.mainText}>
+                                        {task.title}
+                                    </Text>
+                                    <Ellipsis color="#ADADAD" />
+                                </View>
+                                <View>
+                                    <CustomButton
+                                        color={
+                                            getStatusLabel(task.status).color
+                                        }
+                                        backgroundColor={
+                                            getStatusLabel(task.status)
+                                                .backgroundColor
+                                        }
+                                        height={24}
+                                        width={100}
+                                        fontSize={14}
+                                    >
+                                        {getStatusLabel(task.status).label}
+                                    </CustomButton>
+                                </View>
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        justifyContent: "space-between",
+                                    }}
+                                >
+                                    <View
+                                        style={{
+                                            flexDirection: "row",
+                                            gap: 14,
+                                            alignItems: "center",
+                                        }}
+                                    >
+                                        <View
+                                            style={{
+                                                flexDirection: "row",
+                                                gap: 4,
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <Calendar color="#ADADAD" />
+                                            <Text style={{ color: "#6B6B6B" }}>
+                                                {formatDate(task.createdAt)}
+                                            </Text>
+                                        </View>
+                                        <View
+                                            style={{
+                                                flexDirection: "row",
+                                                gap: 4,
+                                                alignItems: "center",
+                                            }}
+                                        >
+                                            <Target color="#ADADAD" />
+                                            <Text style={{ color: "#6B6B6B" }}>
+                                                {task.points} pontos
+                                            </Text>
+                                        </View>
+                                    </View>
+                                    <View>
+                                        <OtherUserPhoto id={task.userId} />
+                                    </View>
+                                </View>
+                            </TouchableOpacity>
+                        ))
+                    ) : tasks !== null && tasks.length === 0 ? (
                         <View
                             style={{
-                                flexDirection: "row",
-                                gap: 14,
                                 alignItems: "center",
+                                flex: 1,
+                                justifyContent: "center",
+                                height: 600,
                             }}
                         >
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    gap: 4,
-                                    alignItems: "center",
-                                }}
-                            >
-                                <Calendar color="#ADADAD" />
-                                <Text style={{ color: "#6B6B6B" }}>
-                                    {formatDate(task.createdAt)}
-                                </Text>
-                            </View>
-                            <View
-                                style={{
-                                    flexDirection: "row",
-                                    gap: 4,
-                                    alignItems: "center",
-                                }}
-                            >
-                                <Target color="#ADADAD" />
-                                <Text style={{ color: "#6B6B6B" }}>
-                                    {task.points} pontos
-                                </Text>
-                            </View>
+                            <PorquinhoTriste width={60} height={60} />
+                            <Text style={{ marginTop: 10, fontSize: 16 }}>
+                                Nenhuma tarefa cadastrada
+                            </Text>
                         </View>
-                        <View>
-                            <Image
-                                style={styles.avatarIcon}
-                                source={{
-                                    uri: "https://ui-avatars.com/api/?name=Ryan+Rodrigues&background=52A75E&color=EEFFEE&size=38",
-                                }}
-                            />
-                        </View>
-                    </View>
-                </TouchableOpacity>
-            )) : <Text>Nenhuma tarefa encontrada</Text>}
-            </View>
+                    ) : null}
+                </View>
 
-            <Modal visible={openModal} transparent animationType="fade">
-                <TaskDetailModal task={taskDetail} setOpenModal={setOpenModal} />
-            </Modal>
-            
-        </ScrollView>
+                <Modal visible={openModal} transparent animationType="fade">
+                    <TaskDetailModal
+                        task={taskDetail}
+                        setOpenModal={setOpenModal}
+                    />
+                </Modal>
+            </ScrollView>
+        </>
     );
 }
 
@@ -287,8 +347,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: colors.secondary,
-        borderRadius: '50%',
-        padding: 4,
+        borderRadius: "50%",
         width: 20,
         height: 20,
         marginLeft: 4,

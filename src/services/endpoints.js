@@ -11,6 +11,16 @@ import api from "./api";
 
 
 // users
+export const getUserById = async (id) => {
+    try {
+        const response = await api.get("/Users/" + id);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+
 export const registerUser = async (userData) => {
     try {
         const response = await api.post("/Users/register", userData);

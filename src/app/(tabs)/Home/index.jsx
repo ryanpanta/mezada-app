@@ -25,12 +25,15 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { formatFirstName } from "../../../helpers/formatFirstName";
 import { getFamilyGroup, getTaskStats } from "../../../services/endpoints";
 import UserPhoto from "../../../components/UserPhoto/UserPhoto";
+import { useLoading } from "../../../contexts/LoadingContext";
+import Loading from "../../../components/Helpers/Loading";
 
 const DashBoard = () => {
     const route = useRouter();
-    const { user } = useAuth();
+    const { user, logout } = useAuth();
     const [familyGroupData, setFamilyGroupData] = React.useState(null);
     const [tasksStats, setTasksStats] = React.useState(null);
+    const { isLoading } = useLoading();
     React.useEffect(() => {
         async function getFamilyGroupFetch() {
             try {
@@ -66,7 +69,13 @@ const DashBoard = () => {
         getTasksStatsFetch();
         getFamilyGroupFetch();
     }, []);
+
+    console.log(familyGroupData);
+    console.log(user);
+
     return (
+        <>
+        {isLoading && <Loading />}
         <View style={styles.container}>
             <View style={styles.welcome}>
                 <UserPhoto width={36} />
@@ -78,6 +87,7 @@ const DashBoard = () => {
                         </Text>
                     </Text>
                     <Text style={styles.groupText}>{familyGroupData?.name}</Text>
+                    <TouchableOpacity onPress={logout}><Text>Logout</Text></TouchableOpacity>
                 </View>
             </View>
             <View style={styles.tasksContainer}>
@@ -190,6 +200,7 @@ const DashBoard = () => {
                 </View>
             </View>
         </View>
+        </>
     );
 };
 
