@@ -5,23 +5,27 @@ import { fontFamily } from "../../styles/fontFamily";
 import { colors } from "../../styles/color";
 import HeaderCustom from "../../components/HeaderCustom";
 import { CopyCheck } from "lucide-react-native";
-import { showToast } from "../helpers/showToast";
+import { showToast } from "../../helpers/showToast";
 import { createFamilyGroup } from "../../services/endpoints";
+import { useRouter } from "expo-router";
 
 function CreateGroup() {
     const [name, setName] = React.useState("");
-
+    const route = useRouter();
     async function handleClick() {
         try {
-            const response = await createFamilyGroup({name: name});
-            
-            if(response.status === 200) {
+            const response = await createFamilyGroup({ name: name });
+
+            if (response.status === 200) {
                 console.log("Grupo criado com sucesso!");
                 showToast("Grupo criado com sucesso!", "success");
+                route.replace("/Tasks");
             }
-        }
-        catch (error) {
-            showToast("Erro ao criar grupo, tente novamente mais tarde", "error");
+        } catch (error) {
+            showToast(
+                "Erro ao criar grupo, tente novamente mais tarde",
+                "error"
+            );
             console.log(error);
         }
     }

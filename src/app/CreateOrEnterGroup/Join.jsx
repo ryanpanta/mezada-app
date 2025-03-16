@@ -6,23 +6,27 @@ import { colors } from "../../styles/color";
 import HeaderCustom from "../../components/HeaderCustom";
 import { CopyCheck } from "lucide-react-native";
 import { joinFamilyGroup } from "../../services/endpoints";
-
+import { useRouter } from "expo-router";
 function JoinGroup() {
     const [code, setCode] = React.useState("");
-   async function handleClick() {
-           try {
-               const response = await joinFamilyGroup({hashCode: code});
-               
-               if(response.status === 200) {
-                   console.log("Grupo criado com sucesso!");
-                   showToast("Grupo criado com sucesso!", "success");
-               }
-           }
-           catch (error) {
-               showToast("Erro ao criar grupo, tente novamente mais tarde", "error");
-               console.log(error);
-           }
-       }
+    const route = useRouter();
+    async function handleClick() {
+        try {
+            const response = await joinFamilyGroup({ hashCode: code });
+
+            if (response.status === 200) {
+                console.log("Grupo criado com sucesso!");
+                showToast("Grupo criado com sucesso!", "success");
+                route.replace("/Tasks");
+            }
+        } catch (error) {
+            showToast(
+                "Erro ao criar grupo, tente novamente mais tarde",
+                "error"
+            );
+            console.log(error);
+        }
+    }
     return (
         <View style={styles.container}>
             <View style={{ marginBottom: 26 }}>

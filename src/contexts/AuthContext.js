@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { loginUser, getCurrentUser } from "../services/endpoints.js";
-import { showToast } from "../app/helpers/showToast.jsx";
+import { showToast } from "../helpers/showToast.jsx";
 import { useRouter } from "expo-router";
 import { set } from "react-hook-form";
 
@@ -41,7 +41,6 @@ export function AuthProvider({ children }) {
                 setUser(userData.data);
                 router.replace("/CreateOrEnterGroup");
             }
-            
         } catch (error) {
             console.error(
                 "Erro ao logar:",
@@ -59,7 +58,9 @@ export function AuthProvider({ children }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout, loading, isLogged }}>
+        <AuthContext.Provider
+            value={{ user, login, logout, loading, isLogged }}
+        >
             {children}
         </AuthContext.Provider>
     );

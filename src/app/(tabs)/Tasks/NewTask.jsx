@@ -10,8 +10,9 @@ import CustomButton from "../../../components/Form/CustomButtom";
 import { useRouter } from "expo-router";
 
 const schema = yup.object().shape({
-    title: yup.string().required("O título é obrigatório"),
-    points: yup.number().required("Os pontos são obrigatórios"),
+    title: yup.string().required("O título é obrigatório").max(100),
+    description: yup.string().required("A descrição é obrigatória").max(500),
+    points: yup.number().moreThan(0).required("Os pontos são obrigatórios").max(5),
 });
 
 export default function NewTask() {

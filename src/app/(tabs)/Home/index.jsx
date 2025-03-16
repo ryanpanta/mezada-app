@@ -21,9 +21,50 @@ import {
 import { Link } from "expo-router";
 import { useRouter } from "expo-router";
 import Pie from "react-native-pie";
+import { useAuth } from "../../../contexts/AuthContext";
+import { formatFirstName } from "../../../helpers/formatFirstName";
+import { getFamilyGroup, getTaskStats } from "../../../services/endpoints";
 
 const DashBoard = () => {
     const route = useRouter();
+    const { user } = useAuth();
+    const [familyGroupData, setFamilyGroupData] = React.useState(null);
+    const [tasksStats, setTasksStats] = React.useState(null);
+    React.useEffect(() => {
+        async function getFamilyGroupFetch() {
+            try {
+                const response = await getFamilyGroup(user?.familyGroupId);
+
+                if (response.status === 200) {
+                    setFamilyGroupData(response.data);
+                }
+            } catch (error) {
+                showToast(
+                    "Erro ao buscar grupo, tente novamente mais tarde",
+                    "error"
+                );
+                console.log(error);
+            }
+        }
+
+        async function getTasksStatsFetch() {
+            try {
+                const response = await getTaskStats(user?.familyGroupId);
+
+                if (response.status === 200) {
+                    setTasksStats(response.data);
+                }
+            } catch (error) {
+                showToast(
+                    "Erro ao buscar estatísticas, tente novamente mais tarde",
+                    "error"
+                );
+                console.log(error);
+            }
+        }
+        getTasksStatsFetch();
+        getFamilyGroupFetch();
+    }, []);
     return (
         <View style={styles.container}>
             <View style={styles.welcome}>
@@ -35,9 +76,12 @@ const DashBoard = () => {
                 />
                 <View style={{ gap: 1 }}>
                     <Text style={styles.welcomeText}>
-                        Olá, <Text style={styles.spanText}>Rilverton</Text>
+                        Olá,{" "}
+                        <Text style={styles.spanText}>
+                            {formatFirstName(user?.name)}
+                        </Text>
                     </Text>
-                    <Text style={styles.groupText}>Família Rodrigues</Text>
+                    <Text style={styles.groupText}>{familyGroupData?.name}</Text>
                 </View>
             </View>
             <View style={styles.tasksContainer}>
@@ -64,7 +108,7 @@ const DashBoard = () => {
                             <LayoutList color={"#434343"} />
                         </View>
                         <View>
-                            <Text style={styles.countValue}>25</Text>
+                            <Text style={styles.countValue}>{tasksStats?.total}</Text>
                             <Text style={styles.label}>Total</Text>
                         </View>
                     </View>
@@ -73,7 +117,7 @@ const DashBoard = () => {
                             <Hourglass color={"#5F5C0F"} />
                         </View>
                         <View>
-                            <Text style={styles.countValue}>25</Text>
+                            <Text style={styles.countValue}>{tasksStats?.pending}</Text>
                             <Text style={styles.label}>Pendentes</Text>
                         </View>
                     </View>
@@ -82,7 +126,7 @@ const DashBoard = () => {
                             <CircleCheck color={"#008012"} />
                         </View>
                         <View>
-                            <Text style={styles.countValue}>25</Text>
+                            <Text style={styles.countValue}>{tasksStats?.approved}</Text>
                             <Text style={styles.label}>Aprovadas</Text>
                         </View>
                     </View>
@@ -91,7 +135,7 @@ const DashBoard = () => {
                             <Ban color={"#BD0909"} />
                         </View>
                         <View>
-                            <Text style={styles.countValue}>25</Text>
+                            <Text style={styles.countValue}>{tasksStats?.rejected}</Text>
                             <Text style={styles.label}>Rejeitadas</Text>
                         </View>
                     </View>
