@@ -77,9 +77,9 @@ export const getFamilyGroup = async (id) => {
 }
 
 // tasks 
-export const getTasks = async (filter) => {
+export const getTasks = async (filter, familyGroupId) => {
     try {
-        const response = await api.get("/Tasks?status=" + filter);
+        const response = await api.get(`/Tasks?status=${filter}&familyGroupId=${familyGroupId}`);
         return response;
     }
     catch (error) {

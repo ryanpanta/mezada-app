@@ -25,6 +25,7 @@ import PorquinhoTriste from "../../../assets/porquinho-triste.svg";
 import { useAuth } from "../../../contexts/AuthContext";
 import { enumRole } from "../../../utils/enumRole";
 import OtherUserPhoto from "../../../components/UserPhoto/OtherUserPhoto";
+import { enumTaskStatus } from "../../../utils/enumTaskStatus";
 
 export default function Tasks() {
     const router = useRouter();
@@ -32,14 +33,12 @@ export default function Tasks() {
     const [taskDetail, setTaskDetail] = React.useState(null);
     const [openModal, setOpenModal] = React.useState(false);
     const [tasks, setTasks] = React.useState(null);
-    console.log("TASKS ", tasks);
     const { isLoading } = useLoading();
     const { user } = useAuth();
-
     React.useEffect(() => {
         async function fetchTasks() {
             try {
-                const response = await getTasks(active);
+                const response = await getTasks(active, user.familyGroupId);
                 if (response.status === 200) {
                     setTasks(response.data);
                 }
@@ -79,7 +78,6 @@ export default function Tasks() {
             };
         }
     }
-    console.log(isLoading ? "simmm" : "nao");
     return (
         <>
             {isLoading && <Loading />}
@@ -127,12 +125,12 @@ export default function Tasks() {
                     <TouchableOpacity
                         style={[
                             styles.filterButton,
-                            active === 1 ? styles.active : null,
+                            active === enumTaskStatus.PENDING ? styles.active : null,
                         ]}
-                        onPress={() => setActive(1)}
+                        onPress={() => setActive(enumTaskStatus.PENDING)}
                     >
                         <Text style={styles.filterText}>Pendentes</Text>
-                        {active === 1 && (
+                        {active === enumTaskStatus.PENDING && (
                             <View style={styles.filterCount}>
                                 <Text style={styles.filterCountText}>
                                     {tasks?.length}
@@ -143,12 +141,12 @@ export default function Tasks() {
                     <TouchableOpacity
                         style={[
                             styles.filterButton,
-                            active === 2 ? styles.active : null,
+                            active === enumTaskStatus.APPROVED ? styles.active : null,
                         ]}
-                        onPress={() => setActive(2)}
+                        onPress={() => setActive(enumTaskStatus.APPROVED)}
                     >
                         <Text style={styles.filterText}>Aprovadas</Text>
-                        {active === 2 && (
+                        {active === enumTaskStatus.APPROVED && (
                             <View style={styles.filterCount}>
                                 <Text style={styles.filterCountText}>
                                     {tasks?.length}
@@ -159,12 +157,12 @@ export default function Tasks() {
                     <TouchableOpacity
                         style={[
                             styles.filterButton,
-                            active === 3 ? styles.active : null,
+                            active === enumTaskStatus.REJECTED ? styles.active : null,
                         ]}
-                        onPress={() => setActive(3)}
+                        onPress={() => setActive(enumTaskStatus.REJECTED)}
                     >
                         <Text style={styles.filterText}>Rejeitadas</Text>
-                        {active === 3 && (
+                        {active === enumTaskStatus.REJECTED && (
                             <View style={styles.filterCount}>
                                 <Text style={styles.filterCountText}>
                                     {tasks?.length}

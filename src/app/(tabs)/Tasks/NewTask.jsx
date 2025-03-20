@@ -33,7 +33,6 @@ export default function NewTask() {
     const router = useRouter();
 
     async function handleNewTask(data) {
-        console.log(data);
         try {
             const response = await createTask(data);
             if (response.status === 201) {

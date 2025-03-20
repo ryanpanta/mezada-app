@@ -7,21 +7,20 @@ import HeaderCustom from "../../components/HeaderCustom";
 import { CopyCheck } from "lucide-react-native";
 import { joinFamilyGroup } from "../../services/endpoints";
 import { useRouter } from "expo-router";
+import { showToast } from "../../helpers/showToast";
 function JoinGroup() {
     const [code, setCode] = React.useState("");
     const route = useRouter();
     async function handleClick() {
         try {
             const response = await joinFamilyGroup({ hashCode: code });
-
             if (response.status === 200) {
-                console.log("Grupo criado com sucesso!");
-                showToast("Grupo criado com sucesso!", "success");
-                route.replace("/Tasks");
+                showToast("Bem-vindo(a)!", "success");
+                route.replace("/Home");
             }
         } catch (error) {
             showToast(
-                "Erro ao criar grupo, tente novamente mais tarde",
+                "Erro ao entrar no grupo, tente novamente mais tarde",
                 "error"
             );
             console.log(error);

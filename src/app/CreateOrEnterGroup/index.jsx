@@ -19,7 +19,7 @@ function CreateOrEnterGroup() {
     
 
     async function getAvatar() {
-        console.log(response);
+        
         const data = await response.json();
         console.log(data);
     }

@@ -20,17 +20,20 @@ function OtherUserPhoto({id, width = 28, fontSize = 14}) {
         fetchUser();
     }, [id]);
 
-    console.log(user);
     function getPhoto(name) {
-        const names = name.split(" ");
+        const trimmedName = name.trim();
+        
+        const names = trimmedName.split(" ").filter(n => n);
         if (names.length > 1) {
             return names[0].charAt(0) + names[1].charAt(0);
         }
-        return names.slice(0, 2).join("");
+        return trimmedName.slice(0, 2).toUpperCase();
     }
+    const color = user?.textColor ?? colors.secondary;
+    const backgroundColor = user?.backgroundColor ?? colors.primary;
     return (
-        <View style={[styles.container, { width, height: width }]}>
-            <Text style={[styles.textName, { fontSize }]}>
+        <View style={[styles.container, { width, height: width, backgroundColor }]}>
+            <Text style={[styles.textName, { fontSize, color }]}>
                 {getPhoto(user?.name ?? "")}
             </Text>
         </View>
@@ -40,14 +43,10 @@ function OtherUserPhoto({id, width = 28, fontSize = 14}) {
 const styles = StyleSheet.create({
     container: {
         borderRadius: "50%",
-        backgroundColor: colors.primary,
         justifyContent: "center",
         alignItems: "center",
     },
 
-    textName: {
-        color: colors.secondary,
-    },
 });
 
 export default OtherUserPhoto;

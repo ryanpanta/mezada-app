@@ -70,7 +70,6 @@ const DashBoard = () => {
         getFamilyGroupFetch();
     }, []);
 
-    console.log(familyGroupData);
     console.log(user);
 
     return (

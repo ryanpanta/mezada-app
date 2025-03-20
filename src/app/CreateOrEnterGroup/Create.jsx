@@ -17,7 +17,6 @@ function CreateGroup() {
             const response = await createFamilyGroup({ name: name });
 
             if (response.status === 200) {
-                console.log("Grupo criado com sucesso!");
                 showToast("Grupo criado com sucesso!", "success");
                 route.replace("/Tasks");
             }

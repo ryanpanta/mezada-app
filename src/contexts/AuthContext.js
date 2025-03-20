@@ -55,6 +55,7 @@ export function AuthProvider({ children }) {
         await AsyncStorage.removeItem("userId");
         setIsLogged(false);
         setUser(null);
+        router.replace("/Login");
     };
 
     return (

@@ -15,10 +15,16 @@ import { formatDate } from "../../helpers/formatDate";
 import { useAuth } from "../../contexts/AuthContext";
 import { enumRole } from "../../utils/enumRole";
 import { showToast } from "../../helpers/showToast";
-import { deleteTask, setAsApprovedTask, setAsRejectedTask } from "../../services/endpoints";
+import {
+    deleteTask,
+    setAsApprovedTask,
+    setAsRejectedTask,
+} from "../../services/endpoints";
 import { useRouter } from "expo-router";
+import { enumTaskStatus, getLabelTaskStatus } from "../../utils/enumTaskStatus";
 export function TaskDetailModal({ task, setOpenModal }) {
     const { user } = useAuth();
+    console.log(user);
     const modalRef = React.useRef(null);
     const router = useRouter();
     async function handleDeleteTask() {
@@ -34,7 +40,10 @@ export function TaskDetailModal({ task, setOpenModal }) {
                         try {
                             const response = await deleteTask(task.id);
                             if (response.status === 204) {
-                                showToast("Tarefa excluída com sucesso", "success");
+                                showToast(
+                                    "Tarefa excluída com sucesso",
+                                    "success"
+                                );
                                 setOpenModal(false);
                                 router.replace("/Tasks"); // Garante atualização da página
                             }
@@ -62,7 +71,10 @@ export function TaskDetailModal({ task, setOpenModal }) {
                         try {
                             const response = await setAsApprovedTask(task.id);
                             if (response.status === 204) {
-                                showToast("Tarefa aprovada com sucesso", "success");
+                                showToast(
+                                    "Tarefa aprovada com sucesso",
+                                    "success"
+                                );
                                 setOpenModal(false);
                                 router.replace("/Tasks");
                             }
@@ -90,7 +102,10 @@ export function TaskDetailModal({ task, setOpenModal }) {
                         try {
                             const response = await setAsRejectedTask(task.id);
                             if (response.status === 204) {
-                                showToast("Tarefa rejeitada com sucesso", "success");
+                                showToast(
+                                    "Tarefa rejeitada com sucesso",
+                                    "success"
+                                );
                                 setOpenModal(false);
                                 router.replace("/Tasks");
                             }
@@ -109,7 +124,6 @@ export function TaskDetailModal({ task, setOpenModal }) {
         <TouchableWithoutFeedback onPress={() => setOpenModal(false)}>
             <View style={styles.container}>
                 <View style={styles.modal}>
-                    
                     <Pressable
                         style={{
                             position: "absolute",
@@ -125,6 +139,7 @@ export function TaskDetailModal({ task, setOpenModal }) {
                     <Text style={styles.title}>{task?.title}</Text>
                     <Text style={styles.label}>Descrição</Text>
                     <Text style={styles.info}>{task?.description}</Text>
+
                     <View style={{ flexDirection: "row", gap: 80 }}>
                         <View>
                             <Text style={styles.label}>Pontos</Text>
@@ -137,42 +152,59 @@ export function TaskDetailModal({ task, setOpenModal }) {
                             </Text>
                         </View>
                     </View>
-                    <View style={styles.containerButton}>
-                        {user.role === enumRole.PARENT ? (
-                            <>
-                                <CustomButton
-                                    fontSize={18}
-                                    width={140}
-                                    height={40}
-                                    color="#E75E5E"
-                                    backgroundColor="transparent"
-                                    onPress={handleChangeRejectedTask}
-                                >
-                                    Rejeitar
-                                </CustomButton>
 
-                                <CustomButton
-                                    fontSize={18}
-                                    width={140}
-                                    height={40}
-                                    onPress={handleChangeApprovedTask}
-                                >
-                                    Aprovar
-                                </CustomButton>
-                            </>
-                        ) : (
-                            <CustomButton
-                                    fontSize={16}
-                                    width={120}
-                                    height={40}
-                                    color="#E75E5E"
-                                    backgroundColor="#FFF2F2"
-                                    onPress={handleDeleteTask}
-                                >
-                                    Excluir
-                                </CustomButton>
-                        )}
+                    <View style={{ flexDirection: "row", gap: 80 }}>
+                        <View>
+                            <Text style={styles.label}>Status</Text>
+                            <Text style={styles.info}>
+                                {getLabelTaskStatus(task?.status)}
+                            </Text>
+                        </View>
+                        <View>
+                            <Text style={styles.label}>Autor</Text>
+                            <Text style={styles.info}>{task?.userName}</Text>
+                        </View>
                     </View>
+
+                    {user.role === enumRole.PARENT &&
+                    task?.status === enumTaskStatus.PENDING ? (
+                        <View style={styles.containerButton}>
+                            <CustomButton
+                                fontSize={18}
+                                width={140}
+                                height={40}
+                                color="#E75E5E"
+                                backgroundColor="transparent"
+                                onPress={handleChangeRejectedTask}
+                            >
+                                Rejeitar
+                            </CustomButton>
+
+                            <CustomButton
+                                fontSize={18}
+                                width={140}
+                                height={40}
+                                onPress={handleChangeApprovedTask}
+                            >
+                                Aprovar
+                            </CustomButton>
+                        </View>
+                    ) : user.role === enumRole.CHILD &&
+                      task?.status === enumTaskStatus.PENDING &&
+                      task?.userId === user.userId ? (
+                        <View style={styles.containerButton}>
+                            <CustomButton
+                                fontSize={16}
+                                width={120}
+                                height={40}
+                                color="#E75E5E"
+                                backgroundColor="#FFF2F2"
+                                onPress={handleDeleteTask}
+                            >
+                                Excluir
+                            </CustomButton>
+                        </View>
+                    ) : null}
                 </View>
             </View>
         </TouchableWithoutFeedback>
