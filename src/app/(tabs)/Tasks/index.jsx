@@ -16,7 +16,7 @@ import CustomButton from "../../../components/Form/CustomButtom";
 import { Ellipsis, Calendar, Target } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { TaskDetailModal } from "../../../components/TaskDetailModal/TaskDetailModal";
-import { getTask, getTasks } from "../../../services/endpoints";
+import { getFilters, getTask, getTasks } from "../../../services/endpoints";
 import { showToast } from "../../../helpers/showToast";
 import { formatDate } from "../../../helpers/formatDate";
 import { useLoading } from "../../../contexts/LoadingContext";
@@ -33,6 +33,7 @@ export default function Tasks() {
     const [taskDetail, setTaskDetail] = React.useState(null);
     const [openModal, setOpenModal] = React.useState(false);
     const [tasks, setTasks] = React.useState(null);
+    const [filters, setFilters] = React.useState(null);
     const { isLoading } = useLoading();
     const { user } = useAuth();
     React.useEffect(() => {
@@ -44,10 +45,26 @@ export default function Tasks() {
                 }
             } catch (error) {
                 showToast("Erro ao carregar tarefas", "error");
+                console.log(error.response.data);
+            }
+        }
+
+        async function fetchFilters() {
+            try {
+                const response = await getFilters(user.familyGroupId);
+                if (response.status === 200) {
+                    setFilters(response.data);
+                }
+            } catch (error) {
+                showToast("Erro ao carregar filtros", "error");
                 console.log(error);
             }
         }
+
         fetchTasks();
+        if (user?.role === enumRole.PARENT) {
+            fetchFilters();
+        }
     }, [active]);
 
     function handlePress(task) {
@@ -83,7 +100,7 @@ export default function Tasks() {
             {isLoading && <Loading />}
             <ScrollView style={styles.container}>
                 <View style={styles.headerContent}>
-                    <HeaderCustom title="Lista de Tarefas" />
+                    <HeaderCustom title="Central de Ações" />
                     {user?.role === enumRole.CHILD && (
                         <CustomButton
                             onPress={() => router.push("/Tasks/NewTask")}
@@ -106,70 +123,50 @@ export default function Tasks() {
                         maxHeight: 30,
                     }}
                 >
-                    <TouchableOpacity
-                        style={[
-                            styles.filterButton,
-                            active === "" ? styles.active : null,
-                        ]}
-                        onPress={() => setActive("")}
-                    >
-                        <Text style={styles.filterText}>Todas </Text>
-                        {active === "" && (
-                            <View style={styles.filterCount}>
-                                <Text style={styles.filterCountText}>
-                                    {tasks?.length}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterButton,
-                            active === enumTaskStatus.PENDING ? styles.active : null,
-                        ]}
-                        onPress={() => setActive(enumTaskStatus.PENDING)}
-                    >
-                        <Text style={styles.filterText}>Pendentes</Text>
-                        {active === enumTaskStatus.PENDING && (
-                            <View style={styles.filterCount}>
-                                <Text style={styles.filterCountText}>
-                                    {tasks?.length}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterButton,
-                            active === enumTaskStatus.APPROVED ? styles.active : null,
-                        ]}
-                        onPress={() => setActive(enumTaskStatus.APPROVED)}
-                    >
-                        <Text style={styles.filterText}>Aprovadas</Text>
-                        {active === enumTaskStatus.APPROVED && (
-                            <View style={styles.filterCount}>
-                                <Text style={styles.filterCountText}>
-                                    {tasks?.length}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[
-                            styles.filterButton,
-                            active === enumTaskStatus.REJECTED ? styles.active : null,
-                        ]}
-                        onPress={() => setActive(enumTaskStatus.REJECTED)}
-                    >
-                        <Text style={styles.filterText}>Rejeitadas</Text>
-                        {active === enumTaskStatus.REJECTED && (
-                            <View style={styles.filterCount}>
-                                <Text style={styles.filterCountText}>
-                                    {tasks?.length}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                    {user?.role === enumRole.PARENT && (
+                        <>
+                            <TouchableOpacity
+                                style={[
+                                    styles.filterButton,
+                                    active === "" ? styles.active : null,
+                                ]}
+                                onPress={() => setActive("")}
+                            >
+                                <Text style={styles.filterText}>Todas </Text>
+                                {active === "" && (
+                                    <View style={styles.filterCount}>
+                                        <Text style={styles.filterCountText}>
+                                            {tasks?.length}
+                                        </Text>
+                                    </View>
+                                )}
+                            </TouchableOpacity>
+                            {filters?.map((filter) => (
+                                <TouchableOpacity
+                                    style={[
+                                        styles.filterButton,
+                                        active === filter.value
+                                            ? styles.active
+                                            : null,
+                                    ]}
+                                    onPress={() => setActive(filter.value)}
+                                >
+                                    <Text style={styles.filterText}>
+                                        {filter.label}
+                                    </Text>
+                                    {active === filter.value && (
+                                        <View style={styles.filterCount}>
+                                            <Text
+                                                style={styles.filterCountText}
+                                            >
+                                                {tasks?.length}
+                                            </Text>
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </>
+                    )}
                 </ScrollView>
 
                 <View style={{ gap: 16, paddingBottom: 140 }}>
@@ -262,7 +259,7 @@ export default function Tasks() {
                         >
                             <PorquinhoTriste width={60} height={60} />
                             <Text style={{ marginTop: 10, fontSize: 16 }}>
-                                Nenhuma tarefa cadastrada
+                                Nenhuma ação cadastrada
                             </Text>
                         </View>
                     ) : null}

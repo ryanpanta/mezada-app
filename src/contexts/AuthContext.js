@@ -51,6 +51,15 @@ export function AuthProvider({ children }) {
         }
     };
 
+    const syncUser = async () => {
+        try {
+            const response = await getCurrentUser();
+            setUser(response.data);
+        } catch (error) {
+            console.error("Erro ao sincronizar usuário:", error);
+        }
+    };
+
     const logout = async () => {
         await AsyncStorage.removeItem("userId");
         setIsLogged(false);
@@ -60,7 +69,7 @@ export function AuthProvider({ children }) {
 
     return (
         <AuthContext.Provider
-            value={{ user, login, logout, loading, isLogged }}
+            value={{ user, login, logout, loading, isLogged, syncUser }}
         >
             {children}
         </AuthContext.Provider>

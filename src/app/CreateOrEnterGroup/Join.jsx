@@ -8,14 +8,20 @@ import { CopyCheck } from "lucide-react-native";
 import { joinFamilyGroup } from "../../services/endpoints";
 import { useRouter } from "expo-router";
 import { showToast } from "../../helpers/showToast";
+import { useAuth } from "../../contexts/AuthContext";
+import { useLoading } from "../../contexts/LoadingContext";
+import Loading from "../../components/Helpers/Loading";
 function JoinGroup() {
     const [code, setCode] = React.useState("");
+    const { syncUser } = useAuth();
+    const { isLoading } = useLoading();
     const route = useRouter();
     async function handleClick() {
         try {
             const response = await joinFamilyGroup({ hashCode: code });
             if (response.status === 200) {
                 showToast("Bem-vindo(a)!", "success");
+                await syncUser();
                 route.replace("/Home");
             }
         } catch (error) {
@@ -27,28 +33,31 @@ function JoinGroup() {
         }
     }
     return (
-        <View style={styles.container}>
-            <View style={{ marginBottom: 26 }}>
-                <HeaderCustom title="Entrar em um grupo familiar" />
-            </View>
-            <View style={{ flex: 1 }}>
-                <Text style={styles.mainText}>
-                    Insira o código do grupo compartilhado por sua família para
-                    participar.
-                </Text>
-                <View style={styles.inputContainer}>
-                    <TextInput
-                        style={styles.input}
-                        onChangeText={setCode}
-                        value={code}
-                        placeholder="Código do grupo 6 dígitos"
-                    />
+        <>
+            {isLoading && <Loading />}
+            <View style={styles.container}>
+                <View style={{ marginBottom: 26 }}>
+                    <HeaderCustom title="Entrar em um grupo familiar" />
                 </View>
+                <View style={{ flex: 1 }}>
+                    <Text style={styles.mainText}>
+                        Insira o código do grupo compartilhado por sua família
+                        para participar.
+                    </Text>
+                    <View style={styles.inputContainer}>
+                        <TextInput
+                            style={styles.input}
+                            onChangeText={setCode}
+                            value={code}
+                            placeholder="Código do grupo 6 dígitos"
+                        />
+                    </View>
+                </View>
+                <CustomButton width={"100%"} height={44} onPress={handleClick}>
+                    Entrar no grupo
+                </CustomButton>
             </View>
-            <CustomButton width={"100%"} height={44} onPress={handleClick}>
-                Entrar no grupo
-            </CustomButton>
-        </View>
+        </>
     );
 }
 

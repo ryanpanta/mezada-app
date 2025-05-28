@@ -8,9 +8,13 @@ import { CopyCheck } from "lucide-react-native";
 import { showToast } from "../../helpers/showToast";
 import { createFamilyGroup } from "../../services/endpoints";
 import { useRouter } from "expo-router";
+import { useAuth } from "../../contexts/AuthContext";
+import { useLoading } from "../../contexts/LoadingContext";
 
 function CreateGroup() {
     const [name, setName] = React.useState("");
+    const { syncUser } = useAuth();
+    const { isLoading } = useLoading();
     const route = useRouter();
     async function handleClick() {
         try {
@@ -18,6 +22,7 @@ function CreateGroup() {
 
             if (response.status === 200) {
                 showToast("Grupo criado com sucesso!", "success");
+                await syncUser();
                 route.replace("/Tasks");
             }
         } catch (error) {

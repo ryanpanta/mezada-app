@@ -1,4 +1,4 @@
 export const enumRole = {
-    PARENT: 1,
-    CHILD: 2,
+    PARENT: 0,
+    CHILD: 1,
 }

@@ -19,6 +19,8 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import { registerUser } from "../services/endpoints";
 import { showToast } from "../helpers/showToast";
 import { useAuth } from "../contexts/AuthContext";
+import { useLoading } from "../contexts/LoadingContext";
+import Loading from "../components/Helpers/Loading";
 
 const schema = yup.object().shape({
     name: yup.string().required("O nome é obrigatório"),
@@ -37,8 +39,9 @@ const schema = yup.object().shape({
 });
 
 export default function Register() {
+    const { login } = useAuth();
 
-    const {login} = useAuth();
+    const { isLoading } = useLoading();
 
     const {
         control,
@@ -55,196 +58,204 @@ export default function Register() {
         const { confirmPassword, ...filteredData } = data;
         try {
             const response = await registerUser(filteredData);
-            if(response.status === 200) {
+            if (response.status === 200) {
                 showToast(response.data.Message, "success");
                 await login(filteredData);
             }
-            
         } catch (error) {
-            console.error("Erro ao registrar:", error.response?.data?.message || error.message);
+            console.error(
+                "Erro ao registrar:",
+                error.response?.data?.message || error.message
+            );
             showToast(error.response?.data?.message || error.message, "error");
         }
     }
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.iconContainer}>
-                <Porquinho width={90} height={90} />
-            </View>
-            <Text style={styles.title}>Cadastro</Text>
+        <>
+            {isLoading && <Loading />}
 
-            <View style={styles.formContainer}>
-                {/* Nome */}
-                <View>
-                    <View style={styles.inputContainer}>
-                        <Controller
-                            control={control}
-                            name="name"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <TextInput
-                                    style={styles.input}
-                                    onChangeText={onChange}
-                                    onBlur={onBlur}
-                                    value={value}
-                                    placeholder="Nome"
-                                />
-                            )}
-                        />
-                    </View>
-                    {errors.name && (
-                        <Text style={styles.errorText}>
-                            {errors.name.message}
-                        </Text>
-                    )}
+            <SafeAreaView style={styles.container}>
+                <View style={styles.iconContainer}>
+                    <Porquinho width={90} height={90} />
                 </View>
+                <Text style={styles.title}>Cadastro</Text>
 
-                {/* E-mail */}
-                <View>
-                    <View style={styles.inputContainer}>
-                        <Controller
-                            control={control}
-                            name="email"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <TextInput
-                                    style={styles.input}
-                                    onChangeText={onChange}
-                                    onBlur={onBlur}
-                                    value={value}
-                                    placeholder="E-mail"
-                                    keyboardType="email-address"
-                                />
-                            )}
-                        />
-                    </View>
-
-                    {errors.email && (
-                        <Text style={styles.errorText}>
-                            {errors.email.message}
-                        </Text>
-                    )}
-                </View>
-
-                {/* Senha */}
-                <View>
-                    <View style={styles.inputContainer}>
-                        <Controller
-                            control={control}
-                            name="password"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <View style={styles.passwordWrapper}>
+                <View style={styles.formContainer}>
+                    {/* Nome */}
+                    <View>
+                        <View style={styles.inputContainer}>
+                            <Controller
+                                control={control}
+                                name="name"
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
                                     <TextInput
                                         style={styles.input}
                                         onChangeText={onChange}
                                         onBlur={onBlur}
                                         value={value}
-                                        placeholder="Senha"
-                                        secureTextEntry={!showPassword}
+                                        placeholder="Nome"
                                     />
-                                    <TouchableOpacity
-                                        style={styles.eyeIcon}
-                                        onPress={() =>
-                                            setShowPassword(!showPassword)
-                                        }
-                                    >
-                                        {showPassword ? (
-                                            <EyeOff
-                                                size={24}
-                                                color={colors.gray[400]}
-                                            />
-                                        ) : (
-                                            <Eye
-                                                color={colors.gray[400]}
-                                                size={24}
-                                            />
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        />
+                                )}
+                            />
+                        </View>
+                        {errors.name && (
+                            <Text style={styles.errorText}>
+                                {errors.name.message}
+                            </Text>
+                        )}
                     </View>
-                    {errors.password && (
-                        <Text style={styles.errorText}>
-                            {errors.password.message}
-                        </Text>
-                    )}
-                </View>
 
-                {/* Confirmação de Senha */}
-                <View>
-                    <View style={styles.inputContainer}>
-                        <Controller
-                            control={control}
-                            name="confirmPassword"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <View style={styles.passwordWrapper}>
+                    {/* E-mail */}
+                    <View>
+                        <View style={styles.inputContainer}>
+                            <Controller
+                                control={control}
+                                name="email"
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
                                     <TextInput
                                         style={styles.input}
                                         onChangeText={onChange}
                                         onBlur={onBlur}
                                         value={value}
-                                        placeholder="Confirmação de Senha"
-                                        secureTextEntry={!showConfirmPassword}
+                                        placeholder="E-mail"
+                                        keyboardType="email-address"
                                     />
-                                    <TouchableOpacity
-                                        style={styles.eyeIcon}
-                                        onPress={() =>
-                                            setShowConfirmPassword(
+                                )}
+                            />
+                        </View>
+
+                        {errors.email && (
+                            <Text style={styles.errorText}>
+                                {errors.email.message}
+                            </Text>
+                        )}
+                    </View>
+
+                    {/* Senha */}
+                    <View>
+                        <View style={styles.inputContainer}>
+                            <Controller
+                                control={control}
+                                name="password"
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <View style={styles.passwordWrapper}>
+                                        <TextInput
+                                            style={styles.input}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            value={value}
+                                            placeholder="Senha"
+                                            secureTextEntry={!showPassword}
+                                        />
+                                        <TouchableOpacity
+                                            style={styles.eyeIcon}
+                                            onPress={() =>
+                                                setShowPassword(!showPassword)
+                                            }
+                                        >
+                                            {showPassword ? (
+                                                <EyeOff
+                                                    size={24}
+                                                    color={colors.gray[400]}
+                                                />
+                                            ) : (
+                                                <Eye
+                                                    color={colors.gray[400]}
+                                                    size={24}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            />
+                        </View>
+                        {errors.password && (
+                            <Text style={styles.errorText}>
+                                {errors.password.message}
+                            </Text>
+                        )}
+                    </View>
+
+                    {/* Confirmação de Senha */}
+                    <View>
+                        <View style={styles.inputContainer}>
+                            <Controller
+                                control={control}
+                                name="confirmPassword"
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <View style={styles.passwordWrapper}>
+                                        <TextInput
+                                            style={styles.input}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            value={value}
+                                            placeholder="Confirmação de Senha"
+                                            secureTextEntry={
                                                 !showConfirmPassword
-                                            )
-                                        }
-                                    >
-                                        {showConfirmPassword ? (
-                                            <EyeOff
-                                                color={colors.gray[400]}
-                                                size={24}
-                                            />
-                                        ) : (
-                                            <Eye
-                                                color={colors.gray[400]}
-                                                size={24}
-                                            />
-                                        )}
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        />
+                                            }
+                                        />
+                                        <TouchableOpacity
+                                            style={styles.eyeIcon}
+                                            onPress={() =>
+                                                setShowConfirmPassword(
+                                                    !showConfirmPassword
+                                                )
+                                            }
+                                        >
+                                            {showConfirmPassword ? (
+                                                <EyeOff
+                                                    color={colors.gray[400]}
+                                                    size={24}
+                                                />
+                                            ) : (
+                                                <Eye
+                                                    color={colors.gray[400]}
+                                                    size={24}
+                                                />
+                                            )}
+                                        </TouchableOpacity>
+                                    </View>
+                                )}
+                            />
+                        </View>
+                        {errors.confirmPassword && (
+                            <Text style={styles.errorText}>
+                                {errors.confirmPassword.message}
+                            </Text>
+                        )}
                     </View>
-                    {errors.confirmPassword && (
-                        <Text style={styles.errorText}>
-                            {errors.confirmPassword.message}
-                        </Text>
-                    )}
-                </View>
-                {/* Botão de Cadastro */}
-                <View style={styles.buttonContainer}>
-                    <CustomButton
-                        height={50}
-                        fontSize={24}
-                        onPress={handleSubmit(handleRegister)}
-                    >
-                        Cadastrar
-                    </CustomButton>
-                </View>
+                    {/* Botão de Cadastro */}
+                    <View style={styles.buttonContainer}>
+                        <CustomButton
+                            height={50}
+                            fontSize={24}
+                            onPress={handleSubmit(handleRegister)}
+                        >
+                            Cadastrar
+                        </CustomButton>
+                    </View>
 
-                {/* Link para Login */}
-                <View style={styles.questionContainer}>
-                    <Text style={styles.questionText}>
-                        Você já tem uma conta? Faça o{" "}
-                        <Link style={styles.loginSpan} href={"/Login"}>
-                            login
-                        </Link>
-                    </Text>
+                    {/* Link para Login */}
+                    <View style={styles.questionContainer}>
+                        <Text style={styles.questionText}>
+                            Você já tem uma conta? Faça o{" "}
+                            <Link style={styles.loginSpan} href={"/Login"}>
+                                login
+                            </Link>
+                        </Text>
+                    </View>
                 </View>
-            </View>
-        </SafeAreaView>
+            </SafeAreaView>
+        </>
     );
 }
 

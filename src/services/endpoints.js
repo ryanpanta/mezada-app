@@ -20,6 +20,23 @@ export const getUserById = async (id) => {
     }
 }
 
+export const getUsersByFamilyGroup = async (id) => {
+    try {
+        const response = await api.get("/Users/FamilyGroup" + id);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const setAsParent = async (id) => {
+    try {
+        const response = await api.put("/Users/SetAsParent", id);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
 
 export const registerUser = async (userData) => {
     try {
@@ -79,10 +96,19 @@ export const getFamilyGroup = async (id) => {
 // tasks 
 export const getTasks = async (filter, familyGroupId) => {
     try {
-        const response = await api.get(`/Tasks?status=${filter}&familyGroupId=${familyGroupId}`);
+        const response = await api.get(`/Tasks?filter=${filter}&groupId=${familyGroupId}`);
         return response;
     }
     catch (error) {
+        throw error;
+    }
+}
+
+export const getFilters = async (familyGroupId) => {
+    try {
+        const response = await api.get("/Tasks/filters/" + familyGroupId);
+        return response;
+    } catch (error) {
         throw error;
     }
 }

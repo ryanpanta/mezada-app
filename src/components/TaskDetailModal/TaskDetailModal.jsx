@@ -208,6 +208,8 @@ export function TaskDetailModal({ task, setOpenModal }) {
                 </View>
             </View>
         </TouchableWithoutFeedback>
+
+
     );
 }
 

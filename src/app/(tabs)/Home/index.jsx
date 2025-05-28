@@ -91,7 +91,7 @@ const DashBoard = () => {
             </View>
             <View style={styles.tasksContainer}>
                 <Text style={styles.titleSection}>
-                    Tarefas{" "}
+                    Ações{" "}
                     <Link href="">
                         <Text
                             style={{
@@ -102,7 +102,7 @@ const DashBoard = () => {
                                 fontFamily: fontFamily.roboto.bold,
                             }}
                         >
-                            (ir para tarefas)
+                            (ir para ações)
                         </Text>
                     </Link>
                 </Text>
@@ -118,21 +118,12 @@ const DashBoard = () => {
                         </View>
                     </View>
                     <View style={styles.itemContainer}>
-                        <View style={[styles.waitingWrapper, styles.wrapper]}>
-                            <Hourglass color={"#5F5C0F"} />
-                        </View>
-                        <View>
-                            <Text style={styles.countValue}>{tasksStats?.pending}</Text>
-                            <Text style={styles.label}>Pendentes</Text>
-                        </View>
-                    </View>
-                    <View style={styles.itemContainer}>
                         <View style={[styles.approvedWrapper, styles.wrapper]}>
                             <CircleCheck color={"#008012"} />
                         </View>
                         <View>
-                            <Text style={styles.countValue}>{tasksStats?.approved}</Text>
-                            <Text style={styles.label}>Aprovadas</Text>
+                            <Text style={styles.countValue}>{tasksStats?.rewards}</Text>
+                            <Text style={styles.label}>Recompensa</Text>
                         </View>
                     </View>
                     <View style={styles.itemContainer}>
@@ -140,15 +131,15 @@ const DashBoard = () => {
                             <Ban color={"#BD0909"} />
                         </View>
                         <View>
-                            <Text style={styles.countValue}>{tasksStats?.rejected}</Text>
-                            <Text style={styles.label}>Rejeitadas</Text>
+                            <Text style={styles.countValue}>{tasksStats?.penalties}</Text>
+                            <Text style={styles.label}>Penalidade</Text>
                         </View>
                     </View>
                 </View>
             </View>
 
             <View style={styles.actionsContainer}>
-                <Text style={styles.titleSection}>Ações</Text>
+                <Text style={styles.titleSection}>Gerenciar</Text>
                 <View style={styles.actionBackground}>
                     <TouchableOpacity
                         style={styles.itemContainerAction}
@@ -167,7 +158,7 @@ const DashBoard = () => {
                             }}
                         >
                             <Text style={styles.actionText}>
-                                Ver informações do grupo familiar
+                                Ver informações do grupo
                             </Text>
                             <ChevronRight color={"#8B8B8B"} />
                         </View>
