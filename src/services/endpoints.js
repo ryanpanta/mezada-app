@@ -93,6 +93,15 @@ export const getFamilyGroup = async (id) => {
     }
 }
 
+export const getChildren = async (familyGroupId) => {
+    try {
+        const response = await api.get("/FamilyGroups/" + familyGroupId + "/children");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
 // tasks 
 export const getTasks = async (filter, familyGroupId) => {
     try {

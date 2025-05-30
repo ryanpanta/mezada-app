@@ -1,7 +1,7 @@
 import { View, TouchableOpacity, StyleSheet } from "react-native";
 import { usePathname, useRouter } from "expo-router";
 import { Home, ClipboardList, UserRound } from "lucide-react-native";
-import {colors} from "../styles/color";
+import { colors } from "../styles/color";
 export default function TabBarCustom() {
     const pathname = usePathname();
     const router = useRouter();
@@ -17,17 +17,25 @@ export default function TabBarCustom() {
             {tabs.map((tab, index) => {
                 const Icon = tab.icon;
                 const isActive = pathname === `/${tab.name}`;
+                const buttonSize = 48; // 28 (icon) + 20 (padding)
                 return (
                     <TouchableOpacity
                         key={index}
                         onPress={() => router.push(`/${tab.name}`)}
                         style={{
                             backgroundColor: isActive ? "#fff" : "transparent",
-                            borderRadius: "50%",
+                            borderRadius: buttonSize / 2,
                             padding: 10,
+                            width: buttonSize,
+                            height: buttonSize,
+                            justifyContent: "center",
+                            alignItems: "center",
                         }}
                     >
-                        <Icon size={28} color={isActive ? "#4CAF50" : colors.secondary} />
+                        <Icon
+                            size={28}
+                            color={isActive ? "#4CAF50" : colors.secondary}
+                        />
                     </TouchableOpacity>
                 );
             })}

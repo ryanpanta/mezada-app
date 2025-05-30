@@ -9,24 +9,14 @@ import { useAuth } from "../../contexts/AuthContext";
 import { formatFirstName } from "../../helpers/formatFirstName";
 
 function CreateOrEnterGroup() {
-
-    const {user} = useAuth();
+    const { user } = useAuth();
     const router = useRouter();
 
-    if (user?.familyGroupId) {
-         router.replace('/Home');
-    }
-    
-
-    async function getAvatar() {
-        
-        const data = await response.json();
-        console.log(data);
-    }
-
     React.useEffect(() => {
-        getAvatar();
-    }, []);
+        if (user?.familyGroupId) {
+            router.replace("/Home");
+        }
+    }, [user]);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -37,20 +27,49 @@ function CreateOrEnterGroup() {
                         uri: "https://ui-avatars.com/api/?name=Ryan+Rodrigues&background=52A75E&color=EEFFEE&size=36",
                     }}
                 />
-                <Text style={styles.welcomeText}>Olá, <Text style={styles.spanText}>{formatFirstName(user.name)}</Text></Text>
+                <Text style={styles.welcomeText}>
+                    Olá,{" "}
+                    <Text style={styles.spanText}>
+                        {formatFirstName(user.name)}
+                    </Text>
+                </Text>
             </View>
-            <Text style={{fontSize: 18, marginTop: 30, marginBottom: 30 }}>Você ainda não faz parte de um grupo familiar. Escolha como deseja começar:</Text>
+            <Text style={{ fontSize: 18, marginTop: 30, marginBottom: 30 }}>
+                Você ainda não faz parte de um grupo familiar. Escolha como
+                deseja começar:
+            </Text>
             <View style={[styles.optionContainer, styles.optionSon]}>
                 <Text style={styles.titleOption}>Filho(a)</Text>
-                <Text style={styles.descriptionOption}>Sou filho(a) e quero entrar em um grupo familiar para participar das tarefas.</Text>
-                <CustomButton width="100%" height={40} onPress={() => router.push('/CreateOrEnterGroup/Join')}fontSize={18}>Entrar em um grupo</CustomButton>
+                <Text style={styles.descriptionOption}>
+                    Sou filho(a) e quero entrar em um grupo familiar para
+                    participar das tarefas.
+                </Text>
+                <CustomButton
+                    width="100%"
+                    height={40}
+                    onPress={() => router.push("/CreateOrEnterGroup/Join")}
+                    fontSize={18}
+                >
+                    Entrar em um grupo
+                </CustomButton>
             </View>
             <View style={[styles.optionContainer, styles.optionParent]}>
                 <Text style={styles.titleOption}>Pai/mãe</Text>
-                <Text style={styles.descriptionOption}>Sou pai/mãe e quero criar um grupo familiar para gerenciar mesadas e tarefas.</Text>
-                <CustomButton color={"#EEF8FF"} backgroundColor={"#506BA6"} width="100%" height={40} onPress={() => router.push('/CreateOrEnterGroup/Create')} fontSize={18}>Criar um grupo</CustomButton>
+                <Text style={styles.descriptionOption}>
+                    Sou pai/mãe e quero criar um grupo familiar para gerenciar
+                    mesadas e tarefas.
+                </Text>
+                <CustomButton
+                    color={"#EEF8FF"}
+                    backgroundColor={"#506BA6"}
+                    width="100%"
+                    height={40}
+                    onPress={() => router.push("/CreateOrEnterGroup/Create")}
+                    fontSize={18}
+                >
+                    Criar um grupo
+                </CustomButton>
             </View>
-           
         </SafeAreaView>
     );
 }
@@ -65,7 +84,7 @@ const styles = StyleSheet.create({
     },
 
     avatarIcon: {
-        borderRadius: "50%",
+        borderRadius: 50,
         width: 36,
         height: 36,
     },
@@ -108,9 +127,8 @@ const styles = StyleSheet.create({
         borderColor: "#506BA6",
     },
     optionParentButtom: {
-        backgroundColor: '#ffff',
-    }
-
+        backgroundColor: "#ffff",
+    },
 });
 
 export default CreateOrEnterGroup;

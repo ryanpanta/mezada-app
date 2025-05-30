@@ -31,7 +31,7 @@ const schema = yup.object().shape({
 
 export default function Login() {
 
-    const { login} = useAuth();
+    const { login } = useAuth();
 
     const {
         control,

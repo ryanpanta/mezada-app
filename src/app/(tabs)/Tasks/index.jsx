@@ -68,40 +68,19 @@ export default function Tasks() {
     }, [active]);
 
     function handlePress(task) {
-        setTaskDetail(task);
-        setOpenModal(true);
+        router.push({
+            pathname: "/Tasks/NewTask",
+            params: { taskId: task.id },
+        });
     }
 
-    function getStatusLabel(status) {
-        if (status === 1) {
-            return {
-                label: "Pendente",
-                color: "#5F5C0F",
-                backgroundColor: "#EAE793",
-            };
-        }
-        if (status === 2) {
-            return {
-                label: "Aprovada",
-                color: "#007F12",
-                backgroundColor: "#7ED68A",
-            };
-        }
-        if (status === 3) {
-            return {
-                label: "Rejeitada",
-                color: "#720303",
-                backgroundColor: "#F1A0A0",
-            };
-        }
-    }
     return (
         <>
             {isLoading && <Loading />}
             <ScrollView style={styles.container}>
                 <View style={styles.headerContent}>
                     <HeaderCustom title="Central de Ações" />
-                    {user?.role === enumRole.CHILD && (
+                    {user?.role === enumRole.PARENT ? (
                         <CustomButton
                             onPress={() => router.push("/Tasks/NewTask")}
                             width={110}
@@ -110,6 +89,16 @@ export default function Tasks() {
                             type="secondary"
                         >
                             + Adicionar
+                        </CustomButton>
+                    ) : (
+                        <CustomButton
+                            onPress={() => router.push("/Tasks/NewTask")}
+                            width={110}
+                            height={34}
+                            fontSize={14}
+                            type="secondary"
+                        >
+                            + Sugerir
                         </CustomButton>
                     )}
                 </View>
@@ -141,7 +130,7 @@ export default function Tasks() {
                                     </View>
                                 )}
                             </TouchableOpacity>
-                            {filters?.map((filter) => (
+                            {filters?.map((filter, index) => (
                                 <TouchableOpacity
                                     style={[
                                         styles.filterButton,
@@ -149,6 +138,7 @@ export default function Tasks() {
                                             ? styles.active
                                             : null,
                                     ]}
+                                    key={index}
                                     onPress={() => setActive(filter.value)}
                                 >
                                     <Text style={styles.filterText}>
@@ -187,22 +177,6 @@ export default function Tasks() {
                                         {task.title}
                                     </Text>
                                     <Ellipsis color="#ADADAD" />
-                                </View>
-                                <View>
-                                    <CustomButton
-                                        color={
-                                            getStatusLabel(task.status).color
-                                        }
-                                        backgroundColor={
-                                            getStatusLabel(task.status)
-                                                .backgroundColor
-                                        }
-                                        height={24}
-                                        width={100}
-                                        fontSize={14}
-                                    >
-                                        {getStatusLabel(task.status).label}
-                                    </CustomButton>
                                 </View>
                                 <View
                                     style={{
@@ -342,7 +316,7 @@ const styles = StyleSheet.create({
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: colors.secondary,
-        borderRadius: "50%",
+        borderRadius: 50,
         width: 20,
         height: 20,
         marginLeft: 4,
@@ -363,7 +337,7 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
     },
     avatarIcon: {
-        borderRadius: "50%",
+        borderRadius: 50,
         width: 30,
         height: 30,
     },

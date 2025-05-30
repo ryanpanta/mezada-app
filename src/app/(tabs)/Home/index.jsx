@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     avatarIcon: {
-        borderRadius: "50%",
+        borderRadius: 18,
         width: 36,
         height: 36,
     },
@@ -270,7 +270,7 @@ const styles = StyleSheet.create({
     wrapper: {
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: "50%",
+        borderRadius: 50,
         padding: 12,
     },
     totalWrapper: {

@@ -4,7 +4,7 @@ import { useAuth } from "../../contexts/AuthContext";
 import { colors } from "../../styles/color";
 import { getUserById } from "../../services/endpoints";
 
-function OtherUserPhoto({id, width = 28, fontSize = 14}) {
+function OtherUserPhoto({ id, width = 28, fontSize = 14 }) {
     const [user, setUser] = React.useState(null);
     React.useEffect(() => {
         async function fetchUser() {
@@ -22,8 +22,8 @@ function OtherUserPhoto({id, width = 28, fontSize = 14}) {
 
     function getPhoto(name) {
         const trimmedName = name.trim();
-        
-        const names = trimmedName.split(" ").filter(n => n);
+
+        const names = trimmedName.split(" ").filter((n) => n);
         if (names.length > 1) {
             return names[0].charAt(0) + names[1].charAt(0);
         }
@@ -32,7 +32,17 @@ function OtherUserPhoto({id, width = 28, fontSize = 14}) {
     const color = user?.textColor ?? colors.secondary;
     const backgroundColor = user?.backgroundColor ?? colors.primary;
     return (
-        <View style={[styles.container, { width, height: width, backgroundColor }]}>
+        <View
+            style={[
+                styles.container,
+                {
+                    width,
+                    height: width,
+                    backgroundColor,
+                    borderRadius: width / 2,
+                },
+            ]}
+        >
             <Text style={[styles.textName, { fontSize, color }]}>
                 {getPhoto(user?.name ?? "")}
             </Text>
@@ -42,11 +52,9 @@ function OtherUserPhoto({id, width = 28, fontSize = 14}) {
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: "50%",
         justifyContent: "center",
         alignItems: "center",
     },
-
 });
 
 export default OtherUserPhoto;

@@ -9,13 +9,16 @@ function UserPhoto({ width = 28, fontSize = 13 }) {
     const [colorsUser, setColorsUser] = React.useState({
         backgroundColor: colors.primary,
         color: colors.secondary,
-    })
+    });
 
     React.useEffect(() => {
         async function fetchUser() {
             try {
                 const response = await getUserById(user.userId);
-                    setColorsUser({backgroundColor: response.data.backgroundColor, color: response.data.color});
+                setColorsUser({
+                    backgroundColor: response.data.backgroundColor,
+                    color: response.data.color,
+                });
             } catch (error) {
                 console.log(error);
             }
@@ -39,13 +42,14 @@ function UserPhoto({ width = 28, fontSize = 13 }) {
                     width,
                     height: width,
                     backgroundColor: colorsUser?.backgroundColor,
+                    borderRadius: width / 2,
                 },
             ]}
         >
             <Text
                 style={[
                     styles.textName,
-                    { fontSize, color: colorsUser?.color},
+                    { fontSize, color: colorsUser?.color },
                 ]}
             >
                 {getPhoto(user?.name ?? "")}
@@ -56,7 +60,6 @@ function UserPhoto({ width = 28, fontSize = 13 }) {
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: "50%",
         justifyContent: "center",
         alignItems: "center",
     },

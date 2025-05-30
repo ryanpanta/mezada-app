@@ -14,12 +14,13 @@ import { useForm, Controller } from "react-hook-form";
 import * as yup from "yup";
 import { yupResolver } from "@hookform/resolvers/yup";
 import CustomButton from "../../../components/Form/CustomButtom";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import { showToast } from "../../../helpers/showToast";
-import { createTask } from "../../../services/endpoints";
+import { createTask, getChildren, getTask } from "../../../services/endpoints";
 import { ChevronDown, MoveLeft } from "lucide-react-native";
 import { enumCategory } from "../../../utils/enumCategory";
 import OtherUserPhoto from "../../../components/UserPhoto/OtherUserPhoto";
+import { useAuth } from "../../../contexts/AuthContext";
 
 const schema = yup.object().shape({
     title: yup.string().required("O título é obrigatório").max(100),
@@ -32,8 +33,10 @@ const schema = yup.object().shape({
             "Categoria inválida"
         ),
     initialValue: yup.number().required("O valor inicial é obrigatório"),
-    standardReward: yup.number().required("A recompensa padrão é obrigatória"),
-    limit: yup.number().required("O limite é obrigatório"),
+    defaultIncrement: yup
+        .number()
+        .required("A recompensa padrão é obrigatória"),
+    limitValue: yup.number().required("O limitValuee é obrigatório"),
     users: yup.array().min(1, "Selecione pelo menos um usuário"),
 });
 
@@ -42,18 +45,16 @@ const categories = [
     { value: enumCategory.PENALTY, label: "Penalidade" },
 ];
 
-const users = [
-    { id: "682e73a21a53971e263dd405", name: "Ryan Rodrigues", initials: "RR" },
-    { id: "682e73b01a53971e263dd406", name: "Rildo Rodrigues", initials: "RR" },
-];
-
 export default function NewTask() {
+    const { taskId } = useLocalSearchParams();
+    const [isLoading, setIsLoading] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [showUsersDropdown, setShowUsersDropdown] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
     const [userRewards, setUserRewards] = useState({});
     const [userBalances, setUserBalances] = useState({});
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
+    const [users, setUsers] = useState([]);
 
     const {
         control,
@@ -61,68 +62,138 @@ export default function NewTask() {
         formState: { errors },
         setValue,
         watch,
-        reset,
     } = useForm({
         resolver: yupResolver(schema),
         defaultValues: {
             category: enumCategory.REWARD,
             initialValue: "0",
-            standardReward: "10",
-            limit: "200",
+            defaultIncrement: "10",
+            limitValue: "200",
         },
     });
 
     const router = useRouter();
     const currentCategory = watch("category");
-    const standardRewardValue = watch("standardReward");
+    const defaultIncrementValue = watch("defaultIncrement");
+
+    const { user } = useAuth();
+
+    useEffect(() => {
+        const fetchUsers = async () => {
+            try {
+                const response = await getChildren(user.familyGroupId);
+                setUsers(response.data);
+            } catch (error) {
+                showToast(
+                    error.response?.data?.message || "Erro ao buscar usuários",
+                    "error"
+                );
+                console.log(error.response.data);
+            }
+        };
+        fetchUsers();
+    }, []);
 
     useEffect(() => {
         const category = categories.find((c) => c.value === currentCategory);
         if (category) {
             setSelectedCategory(category);
 
-            // Set initial value to 0 and disable it for rewards
             if (category.value === enumCategory.REWARD) {
                 setValue("initialValue", "0");
-                setValue("limit", "200");
-            }
-            // Set limit to 0 and disable it for penalties
-            else if (category.value === enumCategory.PENALTY) {
-                setValue("limit", "0");
+                setValue("limitValue", "200");
+            } else if (category.value === enumCategory.PENALTY) {
+                setValue("limitValue", "0");
             }
         }
     }, [currentCategory]);
 
-    // Update user rewards when standard reward changes
     useEffect(() => {
-        if (standardRewardValue && selectedUsers.length > 0) {
+        if (defaultIncrementValue && selectedUsers.length > 0) {
             const newUserRewards = {};
             selectedUsers.forEach((user) => {
-                // Only update if the user doesn't have a custom value
                 if (!userRewards[user.id]) {
-                    newUserRewards[user.id] = standardRewardValue;
+                    newUserRewards[user.id] = defaultIncrementValue;
                 }
             });
             setUserRewards((prev) => ({ ...prev, ...newUserRewards }));
         }
-    }, [standardRewardValue]);
+    }, [defaultIncrementValue]);
+
+    useEffect(() => {
+        const fetchTaskDetails = async () => {
+            if (!taskId) return;
+
+            setIsLoading(true);
+            try {
+                const response = await getTask(taskId);
+                if (response.status === 200) {
+                    const taskData = response.data;
+                    console.log(taskData);
+
+                    // Set form values
+                    setValue("title", taskData.title);
+                    setValue("description", taskData.description);
+                    setValue(
+                        "category",
+                        taskData.category === "Reward"
+                            ? enumCategory.REWARD
+                            : enumCategory.PENALTY
+                    );
+                    setValue("initialValue", taskData.initialValue.toString());
+                    setValue(
+                        "defaultIncrement",
+                        taskData.defaultIncrement.toString()
+                    );
+                    setValue("limitValue", taskData.limitValue.toString());
+
+                    // Set selected users
+                    setSelectedUsers(
+                        taskData.children.map((child) => ({
+                            id: child.childId,
+                            name: child.childName,
+                        }))
+                    );
+
+                    // Set rewards and balances from children data
+                    const newUserRewards = {};
+                    const newUserBalances = {};
+                    taskData.children.forEach((child) => {
+                        newUserRewards[child.childId] =
+                            child.customIncrement.toString();
+                        newUserBalances[child.childId] =
+                            child.currentBalance.toString();
+                    });
+                    setUserRewards(newUserRewards);
+                    setUserBalances(newUserBalances);
+                }
+            } catch (error) {
+                showToast(
+                    error.response?.data?.message ||
+                        "Erro ao carregar detalhes da tarefa",
+                    "error"
+                );
+                console.log(error.response?.data);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchTaskDetails();
+    }, [taskId]);
 
     async function handleNewTask(data) {
         try {
             const response = await createTask({
                 ...data,
-                users: selectedUsers.map((user) => ({
-                    ...user,
-                    reward: userRewards[user.id] || data.standardReward,
-                    balance: userBalances[user.id] || "40",
-                })),
+                childIds: selectedUsers.map((user) => user.id),
             });
             if (response.status === 201) {
                 showToast("Tarefa criada com sucesso!", "success");
                 router.replace("/Tasks");
             }
         } catch (error) {
-            console.log(error);
+            console.log(error.response.data);
             showToast(
                 "Erro ao criar tarefa, tente novamente mais tarde",
                 "error"
@@ -145,7 +216,7 @@ export default function NewTask() {
             // Set default values for new user
             setUserRewards((prev) => ({
                 ...prev,
-                [user.id]: standardRewardValue,
+                [user.id]: defaultIncrementValue,
             }));
             setUserBalances((prev) => ({
                 ...prev,
@@ -157,7 +228,7 @@ export default function NewTask() {
     return (
         <ScrollView style={styles.container}>
             <View style={{ marginBottom: 26 }}>
-                <HeaderCustom title="Criar Ação" />
+                <HeaderCustom title={taskId ? "Editar Ação" : "Criar Ação"} />
             </View>
 
             <View style={styles.formContainer}>
@@ -283,7 +354,7 @@ export default function NewTask() {
                         </Text>
                         <Controller
                             control={control}
-                            name="standardReward"
+                            name="defaultIncrement"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -303,7 +374,7 @@ export default function NewTask() {
                         <Text style={styles.label}>Limite</Text>
                         <Controller
                             control={control}
-                            name="limit"
+                            name="limitValue"
                             render={({
                                 field: { onChange, onBlur, value },
                             }) => (
@@ -470,6 +541,7 @@ const styles = StyleSheet.create({
         padding: 20,
         borderWidth: 1,
         borderColor: "#E9E9E9",
+        marginBottom: 150,
     },
     inputGroup: {
         marginBottom: 20,
@@ -555,6 +627,7 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: "#ECECEC",
         paddingVertical: 15,
+        marginBottom: 40,
     },
     userInfo: {
         flexDirection: "row",
@@ -573,12 +646,7 @@ const styles = StyleSheet.create({
         justifyContent: "space-between",
         gap: 10,
     },
-    rewardContainer: {
-        width: 100,
-    },
-    balanceContainer: {
-        width: 100,
-    },
+
     rewardInput: {
         fontFamily: fontFamily.roboto.regular,
         width: 80,
@@ -611,11 +679,6 @@ const styles = StyleSheet.create({
         fontSize: 10,
         fontFamily: fontFamily.roboto.bold,
         color: "#52A75E",
-    },
-    saveButton: {
-        backgroundColor: "#52A75E",
-        marginTop: 20,
-        borderRadius: 24,
     },
     errorText: {
         color: "#ff375b",
