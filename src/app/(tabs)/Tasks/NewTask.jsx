@@ -5,6 +5,8 @@ import {
     TextInput,
     TouchableOpacity,
     ScrollView,
+    Pressable,
+    Alert,
 } from "react-native";
 import HeaderCustom from "../../../components/HeaderCustom";
 import { colors } from "../../../styles/color";
@@ -16,11 +18,20 @@ import { yupResolver } from "@hookform/resolvers/yup";
 import CustomButton from "../../../components/Form/CustomButtom";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { showToast } from "../../../helpers/showToast";
-import { createTask, getChildren, getTask } from "../../../services/endpoints";
+import {
+    createTask,
+    getChildren,
+    getTask,
+    account,
+    deleteTask,
+    removeUserFromTask,
+} from "../../../services/endpoints";
 import { ChevronDown, MoveLeft } from "lucide-react-native";
 import { enumCategory } from "../../../utils/enumCategory";
 import OtherUserPhoto from "../../../components/UserPhoto/OtherUserPhoto";
 import { useAuth } from "../../../contexts/AuthContext";
+import Loading from "../../../components/Helpers/Loading";
+import { useLoading } from "../../../contexts/LoadingContext";
 
 const schema = yup.object().shape({
     title: yup.string().required("O título é obrigatório").max(100),
@@ -46,8 +57,8 @@ const categories = [
 ];
 
 export default function NewTask() {
+    const { isLoading } = useLoading();
     const { taskId } = useLocalSearchParams();
-    const [isLoading, setIsLoading] = useState(false);
     const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
     const [showUsersDropdown, setShowUsersDropdown] = useState(false);
     const [selectedUsers, setSelectedUsers] = useState([]);
@@ -124,7 +135,6 @@ export default function NewTask() {
         const fetchTaskDetails = async () => {
             if (!taskId) return;
 
-            setIsLoading(true);
             try {
                 const response = await getTask(taskId);
                 if (response.status === 200) {
@@ -174,9 +184,7 @@ export default function NewTask() {
                     "error"
                 );
                 console.log(error.response?.data);
-            } finally {
-                setIsLoading(false);
-            }
+            } 
         };
 
         fetchTaskDetails();
@@ -186,7 +194,13 @@ export default function NewTask() {
         try {
             const response = await createTask({
                 ...data,
-                childIds: selectedUsers.map((user) => user.id),
+                id: taskId ?? null,
+                children: selectedUsers.map((user) => {
+                    return {
+                        childId: user.id,
+                        customIncrement: userRewards[user.id],
+                    };
+                }),
             });
             if (response.status === 201) {
                 showToast("Tarefa criada com sucesso!", "success");
@@ -200,6 +214,76 @@ export default function NewTask() {
             );
         }
     }
+
+    async function handleAccount(userId) {
+        try {
+            const response = await account({
+                childId: userId,
+                taskId: taskId,
+            });
+
+            if (response.status === 200) {
+                showToast("Saldo atualizado com sucesso!", "success");
+
+                setUserBalances((prev) => ({
+                    ...prev,
+                    [userId]:
+                        selectedCategory.value === enumCategory.REWARD
+                            ? String(
+                                  Number(userBalances[userId]) +
+                                      Number(userRewards[userId])
+                              )
+                            : String(
+                                  Number(userBalances[userId]) -
+                                      Number(userRewards[userId])
+                              ),
+                }));
+            }
+        } catch (error) {
+            console.log(error.response.data);
+        }
+    }
+
+    const handleDeleteTask = async (taskId) => {
+        try {
+            Alert.alert(
+                "Excluir Tarefa",
+                "Tem certeza que deseja excluir esta tarefa?",
+                [
+                    {
+                        text: "Cancelar",
+                        style: "cancel",
+                    },
+                    {
+                        text: "Excluir",
+                        onPress: async () => {
+                            try {
+                                await deleteTask(taskId);
+                                showToast(
+                                    "Tarefa excluída com sucesso!",
+                                    "success"
+                                );
+                                router.replace("/Tasks");
+                            } catch (error) {
+                                console.log(error.response.data);
+                                showToast(
+                                    "Erro ao excluir tarefa, tente novamente mais tarde",
+                                    "error"
+                                );
+                            }
+                        },
+                        style: "destructive",
+                    },
+                ]
+            );
+        } catch (error) {
+            console.log(error.response.data);
+            showToast(
+                "Erro ao excluir tarefa, tente novamente mais tarde",
+                "error"
+            );
+        }
+    };
 
     const toggleUserSelection = (user) => {
         if (selectedUsers.find((u) => u.id === user.id)) {
@@ -220,296 +304,408 @@ export default function NewTask() {
             }));
             setUserBalances((prev) => ({
                 ...prev,
-                [user.id]: "0",
+                [user.id]: selectedCategory.value === enumCategory.PENALTY ? watch("initialValue") : "0",
             }));
+        }
+        setShowUsersDropdown(false); // Close dropdown after selection
+    };
+
+    const handleDeleteUser = async (userId) => {
+        try {
+            if (taskId) {
+                // Modo edição - precisa remover do banco
+                await removeUserFromTask({
+                    taskId: taskId,
+                    childId: userId,
+                });
+
+                // Remove do estado local
+                setSelectedUsers(
+                    selectedUsers.filter((user) => user.id !== userId)
+                );
+
+                // Remove dos estados de recompensas e saldos
+                const newUserRewards = { ...userRewards };
+                const newUserBalances = { ...userBalances };
+                delete newUserRewards[userId];
+                delete newUserBalances[userId];
+                setUserRewards(newUserRewards);
+                setUserBalances(newUserBalances);
+
+                showToast("Usuário removido com sucesso!", "success");
+            } else {
+                // Modo criação - remove apenas do estado local
+                setSelectedUsers(
+                    selectedUsers.filter((user) => user.id !== userId)
+                );
+
+                // Remove dos estados de recompensas e saldos
+                const newUserRewards = { ...userRewards };
+                const newUserBalances = { ...userBalances };
+                delete newUserRewards[userId];
+                delete newUserBalances[userId];
+                setUserRewards(newUserRewards);
+                setUserBalances(newUserBalances);
+            }
+        } catch (error) {
+            console.log(error.response?.data);
+            showToast(
+                "Erro ao remover usuário, tente novamente mais tarde",
+                "error"
+            );
         }
     };
 
     return (
-        <ScrollView style={styles.container}>
-            <View style={{ marginBottom: 26 }}>
-                <HeaderCustom title={taskId ? "Editar Ação" : "Criar Ação"} />
-            </View>
+        <>
+            {isLoading && <Loading />}
+            <ScrollView style={styles.container}>
+                <Pressable
+                    style={{ flex: 1 }}
+                    onPress={() => {
+                        setShowUsersDropdown(false);
+                        setShowCategoryDropdown(false);
+                    }}
+                >
+                    <View style={{ marginBottom: 26 }}>
+                        <HeaderCustom
+                            title={taskId ? "Editar Ação" : "Criar Ação"}
+                        />
+                    </View>
 
-            <View style={styles.formContainer}>
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Título</Text>
-                    <Controller
-                        control={control}
-                        name="title"
-                        render={({ field: { onChange, onBlur, value } }) => (
-                            <TextInput
-                                style={styles.input}
-                                onChangeText={onChange}
-                                onBlur={onBlur}
-                                value={value}
-                                placeholder="Escreva o título da tarefa"
+                    <View style={styles.formContainer}>
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Título</Text>
+                            <Controller
+                                control={control}
+                                name="title"
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <TextInput
+                                        style={styles.input}
+                                        onChangeText={onChange}
+                                        onBlur={onBlur}
+                                        value={value}
+                                        placeholder="Escreva o título da tarefa"
+                                    />
+                                )}
                             />
-                        )}
-                    />
-                    {errors.title && (
-                        <Text style={styles.errorText}>
-                            {errors.title.message}
-                        </Text>
-                    )}
-                </View>
+                            {errors.title && (
+                                <Text style={styles.errorText}>
+                                    {errors.title.message}
+                                </Text>
+                            )}
+                        </View>
 
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Descrição</Text>
-                    <Controller
-                        control={control}
-                        name="description"
-                        render={({ field: { onChange, onBlur, value } }) => (
-                            <TextInput
-                                style={[styles.input, styles.textArea]}
-                                onChangeText={onChange}
-                                onBlur={onBlur}
-                                value={value}
-                                placeholder="Uma descrição para a tarefa"
-                                multiline
-                                numberOfLines={3}
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Descrição</Text>
+                            <Controller
+                                control={control}
+                                name="description"
+                                render={({
+                                    field: { onChange, onBlur, value },
+                                }) => (
+                                    <TextInput
+                                        style={[styles.input, styles.textArea]}
+                                        onChangeText={onChange}
+                                        onBlur={onBlur}
+                                        value={value}
+                                        placeholder="Uma descrição para a tarefa"
+                                        multiline
+                                        numberOfLines={3}
+                                    />
+                                )}
                             />
-                        )}
-                    />
-                </View>
+                        </View>
 
-                <View style={styles.row}>
-                    <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>Categoria</Text>
-                        <TouchableOpacity
-                            style={styles.dropdown}
-                            onPress={() =>
-                                setShowCategoryDropdown(!showCategoryDropdown)
-                            }
-                        >
-                            <Text style={styles.dropdownText}>
-                                {selectedCategory.label}
-                            </Text>
-                            <ChevronDown size={16} color="#D2D2D2" />
-                        </TouchableOpacity>
-                        {showCategoryDropdown && (
-                            <View style={styles.dropdownContent}>
-                                {categories.map((category) => (
-                                    <TouchableOpacity
-                                        key={category.value}
-                                        style={[
-                                            styles.dropdownItem,
-                                            selectedCategory.value ===
-                                                category.value &&
-                                                styles.selectedItem,
-                                        ]}
-                                        onPress={() => {
-                                            setValue(
-                                                "category",
-                                                category.value
-                                            );
-                                            setSelectedCategory(category);
-                                            setShowCategoryDropdown(false);
-                                        }}
-                                    >
-                                        <Text>{category.label}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </View>
-                        )}
-                    </View>
-
-                    <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>Valor inicial</Text>
-                        <Controller
-                            control={control}
-                            name="initialValue"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <TextInput
-                                    style={[
-                                        styles.input,
-                                        selectedCategory.value ===
-                                            enumCategory.REWARD &&
-                                            styles.disabledInput,
-                                    ]}
-                                    onChangeText={onChange}
-                                    onBlur={onBlur}
-                                    value={value}
-                                    placeholder="0"
-                                    keyboardType="numeric"
-                                    editable={
-                                        selectedCategory.value !==
-                                        enumCategory.REWARD
-                                    }
-                                />
-                            )}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.row}>
-                    <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>
-                            {selectedCategory.value === enumCategory.REWARD
-                                ? "Recompensa"
-                                : "Penalidade"}{" "}
-                            padrão
-                        </Text>
-                        <Controller
-                            control={control}
-                            name="defaultIncrement"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <TextInput
-                                    style={styles.input}
-                                    onChangeText={onChange}
-                                    onBlur={onBlur}
-                                    value={value}
-                                    placeholder="10"
-                                    keyboardType="numeric"
-                                />
-                            )}
-                        />
-                    </View>
-
-                    <View style={[styles.inputGroup, { flex: 1 }]}>
-                        <Text style={styles.label}>Limite</Text>
-                        <Controller
-                            control={control}
-                            name="limitValue"
-                            render={({
-                                field: { onChange, onBlur, value },
-                            }) => (
-                                <TextInput
-                                    style={[
-                                        styles.input,
-                                        selectedCategory.value ===
-                                            enumCategory.PENALTY &&
-                                            styles.disabledInput,
-                                    ]}
-                                    onChangeText={onChange}
-                                    onBlur={onBlur}
-                                    value={value}
-                                    placeholder="200"
-                                    keyboardType="numeric"
-                                    editable={
-                                        selectedCategory.value !==
-                                        enumCategory.PENALTY
-                                    }
-                                />
-                            )}
-                        />
-                    </View>
-                </View>
-
-                <View style={styles.inputGroup}>
-                    <Text style={styles.label}>Usuários</Text>
-                    <TouchableOpacity
-                        style={styles.dropdown}
-                        onPress={() => setShowUsersDropdown(!showUsersDropdown)}
-                    >
-                        <Text style={styles.dropdownText}>
-                            {selectedUsers.length
-                                ? `${selectedUsers.length} selecionados`
-                                : "Selecione os usuários"}
-                        </Text>
-                        <ChevronDown size={16} color="#D2D2D2" />
-                    </TouchableOpacity>
-                    {showUsersDropdown && (
-                        <View style={styles.dropdownContent}>
-                            {users.map((user) => (
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>Categoria</Text>
                                 <TouchableOpacity
-                                    key={user.id}
                                     style={[
-                                        styles.dropdownItem,
-                                        selectedUsers.find(
-                                            (u) => u.id === user.id
-                                        ) && styles.selectedItem,
+                                        styles.dropdown,
+                                        taskId && styles.disabledInput,
                                     ]}
-                                    onPress={() => toggleUserSelection(user)}
+                                    onPress={() => {
+                                        if (!taskId) {
+                                            setShowCategoryDropdown(
+                                                !showCategoryDropdown
+                                            );
+                                        }
+                                    }}
                                 >
-                                    <View
-                                        style={{
-                                            flexDirection: "row",
-                                            alignItems: "center",
-                                            gap: 10,
-                                        }}
+                                    <Text
+                                        style={[
+                                            styles.dropdownText,
+                                            taskId && { color: "#999" },
+                                        ]}
                                     >
-                                        <OtherUserPhoto
-                                            id={user.id}
-                                            size={24}
-                                        />
-                                        <Text style={styles.userName}>
-                                            {user.name}
-                                        </Text>
-                                    </View>
+                                        {selectedCategory.label}
+                                    </Text>
+                                    <ChevronDown
+                                        size={16}
+                                        color={taskId ? "#999" : "#D2D2D2"}
+                                    />
                                 </TouchableOpacity>
-                            ))}
-                        </View>
-                    )}
-                </View>
+                                {!taskId && showCategoryDropdown && (
+                                    <View style={styles.dropdownContent}>
+                                        {categories.map((category) => (
+                                            <TouchableOpacity
+                                                key={category.value}
+                                                style={[
+                                                    styles.dropdownItem,
+                                                    selectedCategory.value ===
+                                                        category.value &&
+                                                        styles.selectedItem,
+                                                ]}
+                                                onPress={() => {
+                                                    setValue(
+                                                        "category",
+                                                        category.value
+                                                    );
+                                                    setSelectedCategory(
+                                                        category
+                                                    );
+                                                    setShowCategoryDropdown(
+                                                        false
+                                                    );
+                                                }}
+                                            >
+                                                <Text>{category.label}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
 
-                {selectedUsers.map((user) => (
-                    <View key={user.id} style={styles.selectedUserContainer}>
-                        <View style={styles.userInfo}>
-                            <OtherUserPhoto id={user.id} size={24} />
-                            <Text style={styles.userName}>{user.name}</Text>
+                            <View style={[styles.inputGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>Valor inicial</Text>
+                                <Controller
+                                    control={control}
+                                    name="initialValue"
+                                    render={({
+                                        field: { onChange, onBlur, value },
+                                    }) => (
+                                        <TextInput
+                                            style={[
+                                                styles.input,
+                                                (selectedCategory.value === enumCategory.REWARD || taskId) && 
+                                                    styles.disabledInput,
+                                            ]}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            value={value}
+                                            placeholder="0"
+                                            keyboardType="numeric"
+                                            editable={
+                                                !(selectedCategory.value === enumCategory.REWARD || taskId)
+                                            }
+                                        />
+                                    )}
+                                />
+                            </View>
                         </View>
-                        <View style={styles.userControls}>
-                            <View style={styles.rewardContainer}>
+
+                        <View style={styles.row}>
+                            <View style={[styles.inputGroup, { flex: 1 }]}>
                                 <Text style={styles.label}>
                                     {selectedCategory.value ===
                                     enumCategory.REWARD
                                         ? "Recompensa"
-                                        : "Penalidade"}
+                                        : "Penalidade"}{" "}
+                                    padrão
                                 </Text>
-                                <TextInput
-                                    style={styles.rewardInput}
-                                    value={userRewards[user.id]}
-                                    onChangeText={(value) =>
-                                        setUserRewards({
-                                            ...userRewards,
-                                            [user.id]: value,
-                                        })
-                                    }
-                                    placeholder="10"
-                                    keyboardType="numeric"
+                                <Controller
+                                    control={control}
+                                    name="defaultIncrement"
+                                    render={({
+                                        field: { onChange, onBlur, value },
+                                    }) => (
+                                        <TextInput
+                                            style={styles.input}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            value={value}
+                                            placeholder="10"
+                                            keyboardType="numeric"
+                                        />
+                                    )}
                                 />
                             </View>
-                            <View style={styles.balanceContainer}>
-                                <Text style={styles.label}>Saldo</Text>
-                                <TextInput
-                                    style={styles.balanceInput}
-                                    value={userBalances[user.id]}
-                                    onChangeText={(value) =>
-                                        setUserBalances({
-                                            ...userBalances,
-                                            [user.id]: value,
-                                        })
-                                    }
-                                    placeholder="40"
-                                    keyboardType="numeric"
+
+                            <View style={[styles.inputGroup, { flex: 1 }]}>
+                                <Text style={styles.label}>Limite</Text>
+                                <Controller
+                                    control={control}
+                                    name="limitValue"
+                                    render={({
+                                        field: { onChange, onBlur, value },
+                                    }) => (
+                                        <TextInput
+                                            style={[
+                                                styles.input,
+                                                selectedCategory.value ===
+                                                    enumCategory.PENALTY &&
+                                                    styles.disabledInput,
+                                            ]}
+                                            onChangeText={onChange}
+                                            onBlur={onBlur}
+                                            value={value}
+                                            placeholder="200"
+                                            keyboardType="numeric"
+                                            editable={
+                                                selectedCategory.value !==
+                                                enumCategory.PENALTY
+                                            }
+                                        />
+                                    )}
                                 />
                             </View>
-                            <CustomButton
-                                height={30}
-                                fontSize={12}
-                                type="secondary"
+                        </View>
+
+                        <View style={styles.inputGroup}>
+                            <Text style={styles.label}>Usuários</Text>
+                            <TouchableOpacity
+                                style={styles.dropdown}
+                                onPress={() =>
+                                    setShowUsersDropdown(!showUsersDropdown)
+                                }
                             >
-                                Contabilizar
+                                <Text style={styles.dropdownText}>
+                                    {selectedUsers.length
+                                        ? `${selectedUsers.length} selecionados`
+                                        : "Selecione os usuários"}
+                                </Text>
+                                <ChevronDown size={16} color="#D2D2D2" />
+                            </TouchableOpacity>
+                            {showUsersDropdown && (
+                                <View style={styles.dropdownContent}>
+                                    {users.map((user) => (
+                                        <TouchableOpacity
+                                            key={user.id}
+                                            style={[
+                                                styles.dropdownItem,
+                                                selectedUsers.find(
+                                                    (u) => u.id === user.id
+                                                ) && styles.selectedItem,
+                                            ]}
+                                            onPress={() =>
+                                                toggleUserSelection(user)
+                                            }
+                                        >
+                                            <View
+                                                style={{
+                                                    flexDirection: "row",
+                                                    alignItems: "center",
+                                                    gap: 10,
+                                                }}
+                                            >
+                                                <OtherUserPhoto
+                                                    id={user.id}
+                                                    size={24}
+                                                />
+                                                <Text style={styles.userName}>
+                                                    {user.name}
+                                                </Text>
+                                            </View>
+                                        </TouchableOpacity>
+                                    ))}
+                                </View>
+                            )}
+                        </View>
+
+                        {selectedUsers.map((user) => (
+                            <View
+                                key={user.id}
+                                style={styles.selectedUserContainer}
+                            >
+                                <View style={styles.userInfo}>
+                                    <OtherUserPhoto id={user.id} size={24} />
+                                    <Text style={styles.userName}>
+                                        {user.name}
+                                    </Text>
+                                    <TouchableOpacity
+                                        onPress={() =>
+                                            handleDeleteUser(user.id)
+                                        }
+                                    >
+                                        <Text style={styles.removeText}>
+                                            remover
+                                        </Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <View style={styles.userControls}>
+                                    <View style={styles.rewardContainer}>
+                                        <Text style={styles.label}>
+                                            {selectedCategory.value ===
+                                            enumCategory.REWARD
+                                                ? "Recompensa"
+                                                : "Penalidade"}
+                                        </Text>
+                                        <TextInput
+                                            style={styles.rewardInput}
+                                            value={userRewards[user.id]}
+                                            onChangeText={(value) =>
+                                                setUserRewards({
+                                                    ...userRewards,
+                                                    [user.id]: value,
+                                                })
+                                            }
+                                            placeholder="10"
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                    <View style={styles.balanceContainer}>
+                                        <Text style={styles.label}>Saldo</Text>
+                                        <TextInput
+                                            style={styles.balanceInput}
+                                            value={userBalances[user.id]}
+                                            onChangeText={(value) =>
+                                                setUserBalances({
+                                                    ...userBalances,
+                                                    [user.id]: value,
+                                                })
+                                            }
+                                            placeholder="40"
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                    <CustomButton
+                                        height={30}
+                                        fontSize={12}
+                                        type="secondary"
+                                        onPress={() => handleAccount(user.id)}
+                                    >
+                                        Contabilizar
+                                    </CustomButton>
+                                </View>
+                            </View>
+                        ))}
+                        <View style={styles.buttonContainer}>
+                            <CustomButton
+                                height={40}
+                                fontSize={16}
+                                onPress={() => handleDeleteTask(taskId)}
+                                color="#FF0000"
+                                backgroundColor="#FFE5E5"
+                            >
+                                Excluir
+                            </CustomButton>
+                            <CustomButton
+                                height={40}
+                                width={180}
+                                fontSize={16}
+                                onPress={handleSubmit(handleNewTask)}
+                                style={styles.saveButton}
+                            >
+                                Salvar Tarefa
                             </CustomButton>
                         </View>
                     </View>
-                ))}
-
-                <CustomButton
-                    height={40}
-                    fontSize={16}
-                    onPress={handleSubmit(handleNewTask)}
-                    style={styles.saveButton}
-                >
-                    Salvar Tarefa
-                </CustomButton>
-            </View>
-        </ScrollView>
+                </Pressable>
+            </ScrollView>
+        </>
     );
 }
 
@@ -570,6 +766,7 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: "row",
+        alignItems: "flex-end",
         gap: 20,
     },
     dropdown: {
@@ -689,5 +886,16 @@ const styles = StyleSheet.create({
     disabledInput: {
         backgroundColor: "#F5F5F5",
         color: "#999",
+    },
+    buttonContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 10,
+    },
+    removeText: {
+        fontSize: 12,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#f01",
+        textDecorationLine: "underline",
     },
 });

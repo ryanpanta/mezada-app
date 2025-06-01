@@ -140,6 +140,14 @@ export const createTask = async (taskData) => {
     }
 }
 
+export const account = async (data) => {
+    try {
+        const response = await api.post("/Tasks/account-points", data);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
 export const setAsApprovedTask = async (id) => {
     try {
         const response = await api.put("/Tasks/" + id + "/approve");
@@ -161,6 +169,15 @@ export const setAsRejectedTask = async (id) => {
 export const deleteTask = async (id) => {
     try {
         const response = await api.delete("/Tasks/" + id);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+export const removeUserFromTask = async (data) => {
+    try {
+        const response = await api.post("/Tasks/remove-child", data);
         return response;
     } catch (error) {
         throw error;
