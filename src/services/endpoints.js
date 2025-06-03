@@ -9,7 +9,6 @@ import api from "./api";
 //   }
 // };
 
-
 // users
 export const getUserById = async (id) => {
     try {
@@ -18,7 +17,7 @@ export const getUserById = async (id) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const getUsersByFamilyGroup = async (id) => {
     try {
@@ -27,21 +26,12 @@ export const getUsersByFamilyGroup = async (id) => {
     } catch (error) {
         throw error;
     }
-}
-
-export const setAsParent = async (id) => {
-    try {
-        const response = await api.put("/Users/SetAsParent", id);
-        return response;
-    } catch (error) {
-        throw error;
-    }
-}
+};
 
 export const registerUser = async (userData) => {
     try {
         const response = await api.post("/Users/register", userData);
-        return response; 
+        return response;
     } catch (error) {
         throw error;
     }
@@ -52,7 +42,7 @@ export const loginUser = async (userData) => {
         const response = await api.post("/Users/login", userData);
         return response;
     } catch (error) {
-        throw error; 
+        throw error;
     }
 };
 
@@ -63,12 +53,15 @@ export const getCurrentUser = async () => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 // familygroups
 export const createFamilyGroup = async (nameFamilyGroup) => {
     try {
-        const response = await api.post("/FamilyGroups/create", nameFamilyGroup);
+        const response = await api.post(
+            "/FamilyGroups/create",
+            nameFamilyGroup
+        );
         return response;
     } catch (error) {
         throw error;
@@ -82,7 +75,7 @@ export const joinFamilyGroup = async (hashFamilyGroup) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const getFamilyGroup = async (id) => {
     try {
@@ -91,27 +84,53 @@ export const getFamilyGroup = async (id) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const getChildren = async (familyGroupId) => {
     try {
-        const response = await api.get("/FamilyGroups/" + familyGroupId + "/children");
+        const response = await api.get(
+            "/FamilyGroups/" + familyGroupId + "/children"
+        );
         return response;
     } catch (error) {
         throw error;
     }
-}
+};
 
-// tasks 
-export const getTasks = async (filter, familyGroupId) => {
+export const getFamilyGroupInfo = async (familyGroupId) => {
     try {
-        const response = await api.get(`/Tasks?filter=${filter}&groupId=${familyGroupId}`);
+        const response = await api.get(
+            "/FamilyGroups/" + familyGroupId + "/info"
+        );
         return response;
-    }
-    catch (error) {
+    } catch (error) {
         throw error;
     }
-}
+};
+
+export const setAsParent = async (familyGroupId, newParentId) => {
+    try {
+        const response = await api.post(
+            "/FamilyGroups/" + familyGroupId + "/set-admin",
+            newParentId
+        );
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+// tasks
+export const getTasks = async (filter, familyGroupId) => {
+    try {
+        const response = await api.get(
+            `/Tasks?filter=${filter}&groupId=${familyGroupId}`
+        );
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
 
 export const getFilters = async (familyGroupId) => {
     try {
@@ -120,7 +139,7 @@ export const getFilters = async (familyGroupId) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const getTask = async (id) => {
     try {
@@ -129,8 +148,27 @@ export const getTask = async (id) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
+export const getHistory = async (id) => {
+    try {
+        const response = await api.get("/TaskHistory/" + id);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const revertHistory = async (id) => {
+    try {
+        const response = await api.post("/TaskHistory/revert", {
+            historyId: id,
+        });
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
 export const createTask = async (taskData) => {
     try {
         const response = await api.post("/Tasks", taskData);
@@ -138,7 +176,7 @@ export const createTask = async (taskData) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const account = async (data) => {
     try {
@@ -147,7 +185,7 @@ export const account = async (data) => {
     } catch (error) {
         throw error;
     }
-}
+};
 export const setAsApprovedTask = async (id) => {
     try {
         const response = await api.put("/Tasks/" + id + "/approve");
@@ -155,7 +193,7 @@ export const setAsApprovedTask = async (id) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const setAsRejectedTask = async (id) => {
     try {
@@ -164,7 +202,7 @@ export const setAsRejectedTask = async (id) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const deleteTask = async (id) => {
     try {
@@ -173,7 +211,7 @@ export const deleteTask = async (id) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const removeUserFromTask = async (data) => {
     try {
@@ -182,7 +220,7 @@ export const removeUserFromTask = async (data) => {
     } catch (error) {
         throw error;
     }
-}
+};
 
 export const getTaskStats = async (familyGroupId) => {
     try {
@@ -191,4 +229,24 @@ export const getTaskStats = async (familyGroupId) => {
     } catch (error) {
         throw error;
     }
-}
+};
+
+// suggestion
+
+export const postSuggestion = async (suggestion) => {
+    try {
+        const response = await api.post("/Suggestion", suggestion);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};
+
+export const getSuggestions = async () => {
+    try {
+        const response = await api.get("/Suggestion");
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

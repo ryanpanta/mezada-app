@@ -13,7 +13,13 @@ import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
 import HeaderCustom from "../../../components/HeaderCustom";
 import CustomButton from "../../../components/Form/CustomButtom";
-import { Ellipsis, Calendar, Target } from "lucide-react-native";
+import {
+    Ellipsis,
+    Calendar,
+    TrendingUp,
+    TrendingDown,
+    Plus,
+} from "lucide-react-native";
 import { useRouter } from "expo-router";
 import { TaskDetailModal } from "../../../components/TaskDetailModal/TaskDetailModal";
 import { getFilters, getTask, getTasks } from "../../../services/endpoints";
@@ -26,6 +32,7 @@ import { useAuth } from "../../../contexts/AuthContext";
 import { enumRole } from "../../../utils/enumRole";
 import OtherUserPhoto from "../../../components/UserPhoto/OtherUserPhoto";
 import { enumTaskStatus } from "../../../utils/enumTaskStatus";
+import { enumCategory } from "../../../utils/enumCategory";
 
 export default function Tasks() {
     const router = useRouter();
@@ -92,7 +99,7 @@ export default function Tasks() {
                         </CustomButton>
                     ) : (
                         <CustomButton
-                            onPress={() => router.push("/Tasks/NewTask")}
+                            onPress={() => router.push("/Tasks/NewSuggestion")}
                             width={110}
                             height={34}
                             fontSize={14}
@@ -210,15 +217,74 @@ export default function Tasks() {
                                                 alignItems: "center",
                                             }}
                                         >
-                                            <Target color="#ADADAD" />
-                                            <Text style={{ color: "#6B6B6B" }}>
-                                                {task.points} pontos
+                                            {task.category ===
+                                            enumCategory.REWARD ? (
+                                                <TrendingUp color="#52A75E" />
+                                            ) : (
+                                                <TrendingDown color="#FF375B" />
+                                            )}
+                                            <Text
+                                                style={{
+                                                    color:
+                                                        task.category ===
+                                                        enumCategory.REWARD
+                                                            ? "#52A75E"
+                                                            : "#FF375B",
+                                                }}
+                                            >
+                                                {task.category ===
+                                                enumCategory.REWARD
+                                                    ? "Recompensa"
+                                                    : "Penalidade"}
                                             </Text>
                                         </View>
                                     </View>
-                                    <View>
-                                        <OtherUserPhoto id={task.userId} />
-                                    </View>
+                                    {user.role === enumRole.PARENT && (
+                                        <View style={styles.usersContainer}>
+                                            {task.childIds
+                                                .slice(0, 2)
+                                                .map((userId, index) => (
+                                                    <View
+                                                        key={userId}
+                                                        style={[
+                                                            styles.userPhotoContainer,
+                                                            index > 0 && {
+                                                                marginLeft: -10,
+                                                            },
+                                                        ]}
+                                                    >
+                                                        <OtherUserPhoto
+                                                            id={userId}
+                                                            size={30}
+                                                        />
+                                                    </View>
+                                                ))}
+                                            {task.childIds.length > 2 && (
+                                                <View
+                                                    style={[
+                                                        styles.userPhotoContainer,
+                                                        { marginLeft: -10 },
+                                                    ]}
+                                                >
+                                                    <View
+                                                        style={
+                                                            styles.extraUsersCount
+                                                        }
+                                                    >
+                                                        <Text
+                                                            style={
+                                                                styles.extraUsersText
+                                                            }
+                                                        >
+                                                            +
+                                                            {task.childIds
+                                                                .length - 2}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                            )}
+                                        </View>
+                                    )}
                                 </View>
                             </TouchableOpacity>
                         ))
@@ -340,5 +406,27 @@ const styles = StyleSheet.create({
         borderRadius: 50,
         width: 30,
         height: 30,
+    },
+    usersContainer: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    userPhotoContainer: {
+        borderRadius: 50,
+        borderWidth: 2,
+        borderColor: colors.white,
+    },
+    extraUsersCount: {
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        backgroundColor: "#ECECEC",
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    extraUsersText: {
+        fontSize: 12,
+        fontFamily: fontFamily.roboto.bold,
+        color: "#6B6B6B",
     },
 });

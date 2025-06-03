@@ -1,13 +1,92 @@
-import React from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { FlatList, ScrollView, StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
 import CustomButton from "../../../components/Form/CustomButtom";
 import HeaderCustom from "../../../components/HeaderCustom";
 import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
 import { CopyCheck } from "lucide-react-native";
+import { getFamilyGroupInfo, setAsParent } from "../../../services/endpoints";
+import { showToast } from "../../../helpers/showToast";
+import { useLoading } from "../../../contexts/LoadingContext";
+import Loading from "../../../components/Helpers/Loading";
+import { useAuth } from "../../../contexts/AuthContext";
+import { enumRole } from "../../../utils/enumRole";
+import * as Clipboard from 'expo-clipboard';
 
 export default function GroupInformation() {
+
+    const [groupInfo, setGroupInfo] = useState(null);
+    const { isLoading } = useLoading();
+    const { user } = useAuth();
+
+    useEffect(() => {
+        fetchGroupInfo();
+    }, []);
+
+    const fetchGroupInfo = async () => {
+        try {
+            const response = await getFamilyGroupInfo(user?.familyGroupId);
+            if (response.status === 200) {
+                setGroupInfo(response.data);
+            }
+        } catch (error) {
+            console.log(error.response?.data);
+            showToast(
+                "Erro ao buscar informações do grupo, tente novamente mais tarde",
+                "error"
+            );
+        }
+    };
+
+    const handleCopyHashCode = async () => {
+        try {
+            await Clipboard.setStringAsync(groupInfo.hashCode);
+            showToast("Código copiado com sucesso!", "success");
+        } catch (error) {
+            showToast("Erro ao copiar código", "error");
+        }
+    };
+
+    const handleSetAsParent = async (userId) => {
+        const confirmPromotion = Alert.alert(
+            "Confirmação",
+            "Tem certeza que deseja promover este usuário a administrador?",
+            [
+                {
+                    text: "Não",
+                    style: "cancel"
+                },
+                {
+                    text: "Sim",
+                    onPress: () => {
+                        return true;
+                    }
+                }
+            ]
+        );
+
+        if (!confirmPromotion) {
+            return;
+        }
+
+        try {
+            const response = await setAsParent(user?.familyGroupId, userId);
+            if (response.status === 200) {
+                showToast("Usuário promovido a administrador com sucesso!", "success");
+                fetchGroupInfo(); 
+            }
+        } catch (error) {
+            console.log(error.response?.data);
+            showToast(
+                "Erro ao promover usuário a administrador, tente novamente mais tarde",
+                "error"
+            );
+        }
+    };
+
     return (
+        <>
+        {isLoading && <Loading />}
         <View style={styles.container}>
             <View style={{ marginBottom: 26 }}>
                 <HeaderCustom title="Informações do Grupo" />
@@ -15,9 +94,9 @@ export default function GroupInformation() {
             <Text style={styles.sectionTitle}>Informações Principais</Text>
             <View style={styles.background}>
                 <Text style={styles.label}>Nome do Grupo</Text>
-                <Text style={styles.groupName}>Família Rodrigues</Text>
-                <Text style={styles.label}>Código do Grupo</Text>
-                <CustomButton type="secondary" width={200} height={50}>
+                <Text style={styles.groupName}>{groupInfo?.name}</Text>
+                <Text style={styles.label}>{groupInfo?.hashCode}</Text>
+                <CustomButton type="secondary" width={200} height={50} onPress={handleCopyHashCode}>
                     <View
                         style={{
                             flexDirection: "row",
@@ -38,10 +117,10 @@ export default function GroupInformation() {
                     </View>
                 </CustomButton>
                 <Text style={styles.infoTextCode}>
-                    Este é o
+                    Este é o {""}
                     <Text style={styles.infoTextCodeSpan}>código único</Text> do
                     seu <Text style={styles.infoTextCodeSpan}>grupo</Text>.
-                    Compartilhe-o com sua família para que possam se juntar ao
+                    Compartilhe-o com os membros para que possam se juntar ao
                     grupo.{" "}
                     <Text style={styles.infoTextCodeSpan}>
                         Clique para copiar.
@@ -51,21 +130,24 @@ export default function GroupInformation() {
             <Text style={styles.sectionTitle}>Usuários</Text>
             <View style={styles.background}>
                 <FlatList
-                    data={[
-                        { name: "João Pena", role: 2 },
-                        { name: "Maria Lurder", role: 2 },
-                        { name: "José Afonso", role: 2 },
-                        { name: "Ryan Rodrigo", role: 1 },
-                    ]}
+                    data={groupInfo?.users}
                     renderItem={({ item }) => (
-                        <Text style={styles.user}>
-                            {item.name} -{" "}
-                            {item.role === 1 ? "mãe/pai" : "filho(a)"}
-                        </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}>
+                            <Text style={styles.user}>
+                                {item.name} -{" "}
+                                {item.role === enumRole.PARENT ? "mãe/pai" : "filho(a)"}
+                            </Text>
+                            {item.role === enumRole.CHILD && user?.role === enumRole.PARENT && (
+                                <TouchableOpacity onPress={() => handleSetAsParent(item.id)} style={{ marginLeft: 10, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                                    <Text style={styles.buttonText}>+ administrador</Text>
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     )}
                 />
             </View>
         </View>
+        </>
     );
 }
 
@@ -77,16 +159,6 @@ const styles = StyleSheet.create({
         maxWidth: 1500,
         width: "100%",
         backgroundColor: colors.background,
-    },
-    mainText: {
-        fontSize: 18,
-        marginBottom: 26,
-        fontFamily: fontFamily.roboto.regular,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontFamily: fontFamily.roboto.bold,
-        marginBottom: 12,
     },
     background: {
         marginTop: 10,
@@ -165,9 +237,17 @@ const styles = StyleSheet.create({
         marginBottom: 20,
     },
     user: {
+        flexDirection: "row",
+        alignItems: "center",
         fontFamily: fontFamily.roboto.regular,
         fontSize: 18,
         color: colors.black,
         marginBottom: 6,
+    },
+    buttonText: {
+        fontFamily: fontFamily.roboto.regular,
+        fontSize: 14,
+        color: colors.primary,
+        textDecorationLine: "underline",
     },
 });

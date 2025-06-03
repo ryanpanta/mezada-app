@@ -5,6 +5,7 @@ import {
     StyleSheet,
     SafeAreaView,
     TouchableOpacity,
+    ScrollView,
 } from "react-native";
 import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
@@ -17,6 +18,7 @@ import {
     UsersRound,
     ChartColumnIncreasing,
     ChevronRight,
+    MessageSquare,
 } from "lucide-react-native";
 import { Link } from "expo-router";
 import { useRouter } from "expo-router";
@@ -27,6 +29,7 @@ import { getFamilyGroup, getTaskStats } from "../../../services/endpoints";
 import UserPhoto from "../../../components/UserPhoto/UserPhoto";
 import { useLoading } from "../../../contexts/LoadingContext";
 import Loading from "../../../components/Helpers/Loading";
+import { enumRole } from "../../../utils/enumRole";
 
 const DashBoard = () => {
     const route = useRouter();
@@ -70,127 +73,173 @@ const DashBoard = () => {
         getFamilyGroupFetch();
     }, []);
 
-    console.log(user);
-
     return (
-        <>
-        {isLoading && <Loading />}
-        <View style={styles.container}>
-            <View style={styles.welcome}>
-                <UserPhoto width={36} />
-                <View style={{ gap: 1 }}>
-                    <Text style={styles.welcomeText}>
-                        Olá,{" "}
-                        <Text style={styles.spanText}>
-                            {formatFirstName(user?.name)}
+        <ScrollView>
+            {isLoading && <Loading />}
+            <View style={styles.container}>
+                <View style={styles.welcome}>
+                    <UserPhoto width={36} />
+                    <View style={{ gap: 1 }}>
+                        <Text style={styles.welcomeText}>
+                            Olá,{" "}
+                            <Text style={styles.spanText}>
+                                {formatFirstName(user?.name)}
+                            </Text>
                         </Text>
+                        <Text style={styles.groupText}>
+                            {familyGroupData?.name}
+                        </Text>
+                        <TouchableOpacity onPress={logout}>
+                            <Text>Logout</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={styles.tasksContainer}>
+                    <Text style={styles.titleSection}>
+                        Ações{" "}
+                        <Link href="">
+                            <Text
+                                style={{
+                                    color: colors.primary,
+                                    fontSize: 12,
+                                    textTransform: "lowercase",
+                                    letterSpacing: 0,
+                                    fontFamily: fontFamily.roboto.bold,
+                                }}
+                            >
+                                (ir para ações)
+                            </Text>
+                        </Link>
                     </Text>
-                    <Text style={styles.groupText}>{familyGroupData?.name}</Text>
-                    <TouchableOpacity onPress={logout}><Text>Logout</Text></TouchableOpacity>
-                </View>
-            </View>
-            <View style={styles.tasksContainer}>
-                <Text style={styles.titleSection}>
-                    Ações{" "}
-                    <Link href="">
-                        <Text
-                            style={{
-                                color: colors.primary,
-                                fontSize: 12,
-                                textTransform: "lowercase",
-                                letterSpacing: 0,
-                                fontFamily: fontFamily.roboto.bold,
-                            }}
-                        >
-                            (ir para ações)
-                        </Text>
-                    </Link>
-                </Text>
 
-                <View style={styles.taskBackground}>
-                    <View style={styles.itemContainer}>
-                        <View style={[styles.totalWrapper, styles.wrapper]}>
-                            <LayoutList color={"#434343"} />
+                    <View style={styles.taskBackground}>
+                        <View style={styles.itemContainer}>
+                            <View style={[styles.totalWrapper, styles.wrapper]}>
+                                <LayoutList color={"#434343"} />
+                            </View>
+                            <View>
+                                <Text style={styles.countValue}>
+                                    {tasksStats?.total}
+                                </Text>
+                                <Text style={styles.label}>Total</Text>
+                            </View>
                         </View>
-                        <View>
-                            <Text style={styles.countValue}>{tasksStats?.total}</Text>
-                            <Text style={styles.label}>Total</Text>
+                        <View style={styles.itemContainer}>
+                            <View
+                                style={[styles.approvedWrapper, styles.wrapper]}
+                            >
+                                <CircleCheck color={"#008012"} />
+                            </View>
+                            <View>
+                                <Text style={styles.countValue}>
+                                    {tasksStats?.rewards}
+                                </Text>
+                                <Text style={styles.label}>Recompensa</Text>
+                            </View>
                         </View>
-                    </View>
-                    <View style={styles.itemContainer}>
-                        <View style={[styles.approvedWrapper, styles.wrapper]}>
-                            <CircleCheck color={"#008012"} />
-                        </View>
-                        <View>
-                            <Text style={styles.countValue}>{tasksStats?.rewards}</Text>
-                            <Text style={styles.label}>Recompensa</Text>
-                        </View>
-                    </View>
-                    <View style={styles.itemContainer}>
-                        <View style={[styles.rejectedWrapper, styles.wrapper]}>
-                            <Ban color={"#BD0909"} />
-                        </View>
-                        <View>
-                            <Text style={styles.countValue}>{tasksStats?.penalties}</Text>
-                            <Text style={styles.label}>Penalidade</Text>
+                        <View style={styles.itemContainer}>
+                            <View
+                                style={[styles.rejectedWrapper, styles.wrapper]}
+                            >
+                                <Ban color={"#BD0909"} />
+                            </View>
+                            <View>
+                                <Text style={styles.countValue}>
+                                    {tasksStats?.penalties}
+                                </Text>
+                                <Text style={styles.label}>Penalidade</Text>
+                            </View>
                         </View>
                     </View>
                 </View>
-            </View>
 
-            <View style={styles.actionsContainer}>
-                <Text style={styles.titleSection}>Gerenciar</Text>
-                <View style={styles.actionBackground}>
-                    <TouchableOpacity
-                        style={styles.itemContainerAction}
-                        onPress={() => {
-                            route.push("/Home/GroupInformation");
-                        }}
-                    >
-                        <View style={[styles.approvedWrapper, styles.wrapper]}>
-                            <UsersRound color={"#008012"} />
-                        </View>
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "space-between",
+                <View style={styles.actionsContainer}>
+                    <Text style={styles.titleSection}>Gerenciar</Text>
+                    <View style={styles.actionBackground}>
+                        <TouchableOpacity
+                            style={styles.itemContainerAction}
+                            onPress={() => {
+                                route.push("/Home/GroupInformation");
                             }}
                         >
-                            <Text style={styles.actionText}>
-                                Ver informações do grupo
-                            </Text>
-                            <ChevronRight color={"#8B8B8B"} />
-                        </View>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.itemContainerAction}
-                        onPress={() => {
-                            route.push("/Home/CloseCycle");
-                        }}
-                    >
-                        <View style={[styles.approvedWrapper, styles.wrapper]}>
-                            <ChartColumnIncreasing color={"#008012"} />
-                        </View>
-                        <View
-                            style={{
-                                flexDirection: "row",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                flex: 1,
+                            <View
+                                style={[styles.approvedWrapper, styles.wrapper]}
+                            >
+                                <UsersRound color={"#008012"} />
+                            </View>
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                }}
+                            >
+                                <Text style={styles.actionText}>
+                                    Ver informações do grupo
+                                </Text>
+                                <ChevronRight color={"#8B8B8B"} />
+                            </View>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.itemContainerAction}
+                            onPress={() => {
+                                route.push("/Home/CloseCycle");
                             }}
                         >
-                            <Text style={styles.actionText}>
-                                Encerrar o ciclo de mesada e consultar sugestão
-                                de valor
-                            </Text>
-                            <ChevronRight color={"#8B8B8B"} />
-                        </View>
-                    </TouchableOpacity>
+                            <View
+                                style={[styles.approvedWrapper, styles.wrapper]}
+                            >
+                                <ChartColumnIncreasing color={"#008012"} />
+                            </View>
+                            <View
+                                style={{
+                                    flexDirection: "row",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    flex: 1,
+                                }}
+                            >
+                                <Text style={styles.actionText}>
+                                    Encerrar o ciclo de mesada e consultar
+                                    sugestão de valor
+                                </Text>
+                                <ChevronRight color={"#8B8B8B"} />
+                            </View>
+                        </TouchableOpacity>
+                        {user?.role === enumRole.PARENT && (
+                            <TouchableOpacity
+                                style={styles.itemContainerAction}
+                                onPress={() => {
+                                    route.push("/Home/Suggestions");
+                                }}
+                            >
+                                <View
+                                    style={[
+                                        styles.approvedWrapper,
+                                        styles.wrapper,
+                                    ]}
+                                >
+                                    <MessageSquare color={"#008012"} />
+                                </View>
+                                <View
+                                    style={{
+                                        flexDirection: "row",
+                                        alignItems: "center",
+                                        justifyContent: "space-between",
+                                        flex: 1,
+                                    }}
+                                >
+                                    <Text style={styles.actionText}>
+                                        Ver sugestões de membros
+                                    </Text>
+                                    <ChevronRight color={"#8B8B8B"} />
+                                </View>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </View>
-        </View>
-        </>
+        </ScrollView>
     );
 };
 
@@ -236,6 +285,7 @@ const styles = StyleSheet.create({
     },
     actionsContainer: {
         marginTop: 40,
+        marginBottom: 160,
     },
     taskBackground: {
         marginTop: 10,

@@ -30,7 +30,7 @@ function CreateOrEnterGroup() {
                 <Text style={styles.welcomeText}>
                     Olá,{" "}
                     <Text style={styles.spanText}>
-                        {formatFirstName(user.name)}
+                        {formatFirstName(user?.name)}
                     </Text>
                 </Text>
             </View>

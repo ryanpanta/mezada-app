@@ -7,6 +7,8 @@ import {
     ScrollView,
     Pressable,
     Alert,
+    Modal,
+    Dimensions,
 } from "react-native";
 import HeaderCustom from "../../../components/HeaderCustom";
 import { colors } from "../../../styles/color";
@@ -25,13 +27,18 @@ import {
     account,
     deleteTask,
     removeUserFromTask,
+    getHistory,
+    revertHistory,
 } from "../../../services/endpoints";
-import { ChevronDown, MoveLeft } from "lucide-react-native";
+import { ChevronDown, MoveLeft, History } from "lucide-react-native";
 import { enumCategory } from "../../../utils/enumCategory";
 import OtherUserPhoto from "../../../components/UserPhoto/OtherUserPhoto";
 import { useAuth } from "../../../contexts/AuthContext";
 import Loading from "../../../components/Helpers/Loading";
 import { useLoading } from "../../../contexts/LoadingContext";
+import { enumRole } from "../../../utils/enumRole";
+import * as d3 from "d3";
+import Svg, { Path, G, Text as SvgText } from "react-native-svg";
 
 const schema = yup.object().shape({
     title: yup.string().required("O título é obrigatório").max(100),
@@ -56,6 +63,98 @@ const categories = [
     { value: enumCategory.PENALTY, label: "Penalidade" },
 ];
 
+const DonutChart = ({ limitValue, currentBalance, bonusBalance }) => {
+    const width = Dimensions.get("window").width * 0.5;
+    const height = width;
+    const radius = Math.min(width, height) / 2;
+    const centerX = width / 2;
+    const centerY = height / 2;
+
+    // Calculate values for the chart
+    const totalBalance = currentBalance + bonusBalance;
+    const remainingValue = Math.max(0, limitValue - totalBalance);
+
+    // Create pie data with three segments
+    const data = [
+        { value: currentBalance, color: colors.primary, label: "Saldo Atual" },
+        { value: bonusBalance, color: "#000080", label: "Bônus" },
+        { value: remainingValue, color: "#ECECEC", label: "Restante" },
+    ];
+
+    // Create pie generator
+    const pie = d3
+        .pie()
+        .value((d) => d.value)
+        .sort(null);
+
+    // Create arc generator
+    const arc = d3
+        .arc()
+        .innerRadius(radius * 0.6)
+        .outerRadius(radius * 0.8);
+
+    // Generate paths
+    const paths = pie(data).map((d, i) => ({
+        path: arc({
+            startAngle: d.startAngle,
+            endAngle: d.endAngle,
+            padAngle: 0.02,
+        }),
+        color: data[i].color,
+        label: data[i].label,
+        value: data[i].value,
+    }));
+
+    return (
+        <View style={styles.chartContainer}>
+            <Svg width={width} height={height}>
+                <G transform={`translate(${centerX}, ${centerY})`}>
+                    {paths.map((item, index) => (
+                        <Path key={index} d={item.path} fill={item.color} />
+                    ))}
+                    <SvgText
+                        x="-14"
+                        y="-5"
+                        fontSize="24"
+                        fontFamily={fontFamily.roboto.bold}
+                        fill={colors.black}
+                        textAnchor="middle"
+                        alignmentBaseline="middle"
+                    >
+                        R${totalBalance}
+                    </SvgText>
+                    <SvgText
+                        x="-14"
+                        y="20"
+                        fontSize="14"
+                        fontFamily={fontFamily.roboto.regular}
+                        fill="#6B6B6B"
+                        textAnchor="middle"
+                        alignmentBaseline="middle"
+                    >
+                        de R${limitValue}
+                    </SvgText>
+                </G>
+            </Svg>
+            <View style={styles.legendContainer}>
+                {data.map((item, index) => (
+                    <View key={index} style={styles.legendItem}>
+                        <View
+                            style={[
+                                styles.legendColor,
+                                { backgroundColor: item.color },
+                            ]}
+                        />
+                        <Text style={styles.legendText}>
+                            {item.label}: {item.value}
+                        </Text>
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+};
+
 export default function NewTask() {
     const { isLoading } = useLoading();
     const { taskId } = useLocalSearchParams();
@@ -66,6 +165,11 @@ export default function NewTask() {
     const [userBalances, setUserBalances] = useState({});
     const [selectedCategory, setSelectedCategory] = useState(categories[0]);
     const [users, setUsers] = useState([]);
+    const [showHistoryModal, setShowHistoryModal] = useState(false);
+    const [history, setHistory] = useState([]);
+    const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+    const [bonusBalance, setBonusBalance] = useState(0);
+    const [task, setTask] = useState(null);
 
     const {
         control,
@@ -91,6 +195,8 @@ export default function NewTask() {
 
     useEffect(() => {
         const fetchUsers = async () => {
+            if (user?.role === enumRole.CHILD) return;
+
             try {
                 const response = await getChildren(user.familyGroupId);
                 setUsers(response.data);
@@ -131,35 +237,48 @@ export default function NewTask() {
         }
     }, [defaultIncrementValue]);
 
-    useEffect(() => {
-        const fetchTaskDetails = async () => {
-            if (!taskId) return;
+    const fetchTaskDetails = async () => {
+        if (!taskId) return;
 
-            try {
-                const response = await getTask(taskId);
-                if (response.status === 200) {
-                    const taskData = response.data;
-                    console.log(taskData);
+        try {
+            const response = await getTask(taskId);
+            if (response.status === 200) {
+                const taskData = response.data;
+                setTask(taskData);
+                console.log(taskData);
 
-                    // Set form values
-                    setValue("title", taskData.title);
-                    setValue("description", taskData.description);
-                    setValue(
-                        "category",
-                        taskData.category === "Reward"
-                            ? enumCategory.REWARD
-                            : enumCategory.PENALTY
+                // Set form values
+                setValue("title", taskData.title);
+                setValue("description", taskData.description);
+                setValue(
+                    "category",
+                    taskData.category === "Reward"
+                        ? enumCategory.REWARD
+                        : enumCategory.PENALTY
+                );
+                setValue("initialValue", taskData.initialValue.toString());
+                setValue(
+                    "defaultIncrement",
+                    taskData.defaultIncrement.toString()
+                );
+                setValue("limitValue", taskData.limitValue.toString());
+
+                if (user?.role === enumRole.CHILD) {
+                    // Find the current user's assignment
+                    const userAssignment = taskData.children?.find(
+                        (child) => child.childId === user.id
                     );
-                    setValue("initialValue", taskData.initialValue.toString());
-                    setValue(
-                        "defaultIncrement",
-                        taskData.defaultIncrement.toString()
-                    );
-                    setValue("limitValue", taskData.limitValue.toString());
-
+                    if (userAssignment) {
+                        setUserBalances({
+                            [user.id]: userAssignment.currentBalance.toString(),
+                        });
+                        // Store bonus balance in state
+                        setBonusBalance(userAssignment.bonusBalance || 0);
+                    }
+                } else {
                     // Set selected users
                     setSelectedUsers(
-                        taskData.children.map((child) => ({
+                        taskData.children?.map((child) => ({
                             id: child.childId,
                             name: child.childName,
                         }))
@@ -177,25 +296,65 @@ export default function NewTask() {
                     setUserRewards(newUserRewards);
                     setUserBalances(newUserBalances);
                 }
-            } catch (error) {
-                showToast(
-                    error.response?.data?.message ||
-                        "Erro ao carregar detalhes da tarefa",
-                    "error"
-                );
-                console.log(error.response?.data);
-            } 
-        };
+            }
+        } catch (error) {
+            showToast(
+                error.response?.data?.message ||
+                    "Erro ao carregar detalhes da tarefa",
+                "error"
+            );
+            console.log(error.response?.data);
+            console.log(error);
+        }
+    };
 
+    useEffect(() => {
         fetchTaskDetails();
     }, [taskId]);
+
+    const fetchHistory = async () => {
+        setIsLoadingHistory(true);
+        try {
+            const response = await getHistory(taskId);
+            if (response.status === 200) {
+                setHistory(response.data);
+            }
+        } catch (error) {
+            showToast(
+                error.response?.data?.message || "Erro ao carregar histórico",
+                "error"
+            );
+            console.log(error.response?.data);
+        } finally {
+            setIsLoadingHistory(false);
+        }
+    };
+
+    const handleRevertHistory = async (historyId) => {
+        try {
+            const response = await revertHistory(historyId);
+            if (response.status === 200) {
+                showToast("Histórico revertido com sucesso!", "success");
+                await Promise.all([
+                    fetchHistory(),
+                    fetchTaskDetails(), // Refetch task details to update balances
+                ]);
+            }
+        } catch (error) {
+            showToast(
+                error.response?.data?.message || "Erro ao reverter histórico",
+                "error"
+            );
+            console.log(error.response?.data);
+        }
+    };
 
     async function handleNewTask(data) {
         try {
             const response = await createTask({
                 ...data,
                 id: taskId ?? null,
-                children: selectedUsers.map((user) => {
+                children: selectedUsers?.map((user) => {
                     return {
                         childId: user.id,
                         customIncrement: userRewards[user.id],
@@ -304,7 +463,10 @@ export default function NewTask() {
             }));
             setUserBalances((prev) => ({
                 ...prev,
-                [user.id]: selectedCategory.value === enumCategory.PENALTY ? watch("initialValue") : "0",
+                [user.id]:
+                    selectedCategory.value === enumCategory.PENALTY
+                        ? watch("initialValue")
+                        : "0",
             }));
         }
         setShowUsersDropdown(false); // Close dropdown after selection
@@ -374,6 +536,36 @@ export default function NewTask() {
                     </View>
 
                     <View style={styles.formContainer}>
+                        {user?.role === enumRole.PARENT && taskId && (
+                            <View style={styles.historyButtonContainer}>
+                                <CustomButton
+                                    height={40}
+                                    fontSize={16}
+                                    type="secondary"
+                                    onPress={() => {
+                                        fetchHistory();
+                                        setShowHistoryModal(true);
+                                    }}
+                                >
+                                    <View
+                                        style={{
+                                            flexDirection: "row",
+                                            alignItems: "center",
+                                            gap: 8,
+                                        }}
+                                    >
+                                        <History
+                                            size={20}
+                                            color={colors.primary}
+                                        />
+                                        <Text style={{ color: colors.primary }}>
+                                            Histórico
+                                        </Text>
+                                    </View>
+                                </CustomButton>
+                            </View>
+                        )}
+
                         <View style={styles.inputGroup}>
                             <Text style={styles.label}>Título</Text>
                             <Controller
@@ -383,11 +575,16 @@ export default function NewTask() {
                                     field: { onChange, onBlur, value },
                                 }) => (
                                     <TextInput
-                                        style={styles.input}
+                                        style={[
+                                            styles.input,
+                                            user?.role === enumRole.CHILD &&
+                                                styles.disabledInput,
+                                        ]}
                                         onChangeText={onChange}
                                         onBlur={onBlur}
                                         value={value}
                                         placeholder="Escreva o título da tarefa"
+                                        editable={user?.role !== enumRole.CHILD}
                                     />
                                 )}
                             />
@@ -407,13 +604,19 @@ export default function NewTask() {
                                     field: { onChange, onBlur, value },
                                 }) => (
                                     <TextInput
-                                        style={[styles.input, styles.textArea]}
+                                        style={[
+                                            styles.input,
+                                            styles.textArea,
+                                            user?.role === enumRole.CHILD &&
+                                                styles.disabledInput,
+                                        ]}
                                         onChangeText={onChange}
                                         onBlur={onBlur}
                                         value={value}
                                         placeholder="Uma descrição para a tarefa"
                                         multiline
                                         numberOfLines={3}
+                                        editable={user?.role !== enumRole.CHILD}
                                     />
                                 )}
                             />
@@ -422,60 +625,79 @@ export default function NewTask() {
                         <View style={styles.row}>
                             <View style={[styles.inputGroup, { flex: 1 }]}>
                                 <Text style={styles.label}>Categoria</Text>
-                                <TouchableOpacity
-                                    style={[
-                                        styles.dropdown,
-                                        taskId && styles.disabledInput,
-                                    ]}
-                                    onPress={() => {
-                                        if (!taskId) {
-                                            setShowCategoryDropdown(
-                                                !showCategoryDropdown
-                                            );
-                                        }
-                                    }}
-                                >
+                                {user?.role === enumRole.CHILD ? (
                                     <Text
                                         style={[
-                                            styles.dropdownText,
-                                            taskId && { color: "#999" },
+                                            styles.input,
+                                            styles.disabledInput,
                                         ]}
                                     >
                                         {selectedCategory.label}
                                     </Text>
-                                    <ChevronDown
-                                        size={16}
-                                        color={taskId ? "#999" : "#D2D2D2"}
-                                    />
-                                </TouchableOpacity>
-                                {!taskId && showCategoryDropdown && (
-                                    <View style={styles.dropdownContent}>
-                                        {categories.map((category) => (
-                                            <TouchableOpacity
-                                                key={category.value}
-                                                style={[
-                                                    styles.dropdownItem,
-                                                    selectedCategory.value ===
-                                                        category.value &&
-                                                        styles.selectedItem,
-                                                ]}
-                                                onPress={() => {
-                                                    setValue(
-                                                        "category",
-                                                        category.value
-                                                    );
-                                                    setSelectedCategory(
-                                                        category
-                                                    );
+                                ) : (
+                                    <>
+                                        <TouchableOpacity
+                                            style={[
+                                                styles.dropdown,
+                                                taskId && styles.disabledInput,
+                                            ]}
+                                            onPress={() => {
+                                                if (!taskId) {
                                                     setShowCategoryDropdown(
-                                                        false
+                                                        !showCategoryDropdown
                                                     );
-                                                }}
+                                                }
+                                            }}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.dropdownText,
+                                                    taskId && { color: "#999" },
+                                                ]}
                                             >
-                                                <Text>{category.label}</Text>
-                                            </TouchableOpacity>
-                                        ))}
-                                    </View>
+                                                {selectedCategory.label}
+                                            </Text>
+                                            <ChevronDown
+                                                size={16}
+                                                color={
+                                                    taskId ? "#999" : "#D2D2D2"
+                                                }
+                                            />
+                                        </TouchableOpacity>
+                                        {!taskId && showCategoryDropdown && (
+                                            <View
+                                                style={styles.dropdownContent}
+                                            >
+                                                {categories?.map((category) => (
+                                                    <TouchableOpacity
+                                                        key={category.value}
+                                                        style={[
+                                                            styles.dropdownItem,
+                                                            selectedCategory.value ===
+                                                                category.value &&
+                                                                styles.selectedItem,
+                                                        ]}
+                                                        onPress={() => {
+                                                            setValue(
+                                                                "category",
+                                                                category.value
+                                                            );
+                                                            setSelectedCategory(
+                                                                category
+                                                            );
+                                                            setShowCategoryDropdown(
+                                                                false
+                                                            );
+                                                        }}
+                                                    >
+                                                        <Text>
+                                                            {category.label}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                ))}
+                                            </View>
+                                        )}
+                                    </>
                                 )}
                             </View>
 
@@ -490,7 +712,11 @@ export default function NewTask() {
                                         <TextInput
                                             style={[
                                                 styles.input,
-                                                (selectedCategory.value === enumCategory.REWARD || taskId) && 
+                                                (selectedCategory.value ===
+                                                    enumCategory.REWARD ||
+                                                    taskId ||
+                                                    user?.role ===
+                                                        enumRole.CHILD) &&
                                                     styles.disabledInput,
                                             ]}
                                             onChangeText={onChange}
@@ -499,7 +725,13 @@ export default function NewTask() {
                                             placeholder="0"
                                             keyboardType="numeric"
                                             editable={
-                                                !(selectedCategory.value === enumCategory.REWARD || taskId)
+                                                !(
+                                                    selectedCategory.value ===
+                                                        enumCategory.REWARD ||
+                                                    taskId ||
+                                                    user?.role ===
+                                                        enumRole.CHILD
+                                                )
                                             }
                                         />
                                     )}
@@ -523,12 +755,18 @@ export default function NewTask() {
                                         field: { onChange, onBlur, value },
                                     }) => (
                                         <TextInput
-                                            style={styles.input}
+                                            style={[
+                                                styles.input,
+                                                user?.role === enumRole.CHILD && styles.disabledInput
+                                            ]}
                                             onChangeText={onChange}
                                             onBlur={onBlur}
                                             value={value}
                                             placeholder="10"
                                             keyboardType="numeric"
+                                            editable={
+                                                user?.role !== enumRole.CHILD
+                                            }
                                         />
                                     )}
                                 />
@@ -545,8 +783,9 @@ export default function NewTask() {
                                         <TextInput
                                             style={[
                                                 styles.input,
-                                                selectedCategory.value ===
-                                                    enumCategory.PENALTY &&
+                                                (selectedCategory.value ===
+                                                    enumCategory.PENALTY ||
+                                                user?.role === enumRole.CHILD) &&
                                                     styles.disabledInput,
                                             ]}
                                             onChangeText={onChange}
@@ -556,7 +795,8 @@ export default function NewTask() {
                                             keyboardType="numeric"
                                             editable={
                                                 selectedCategory.value !==
-                                                enumCategory.PENALTY
+                                                    enumCategory.PENALTY &&
+                                                user?.role !== enumRole.CHILD
                                             }
                                         />
                                     )}
@@ -564,147 +804,282 @@ export default function NewTask() {
                             </View>
                         </View>
 
-                        <View style={styles.inputGroup}>
-                            <Text style={styles.label}>Usuários</Text>
-                            <TouchableOpacity
-                                style={styles.dropdown}
-                                onPress={() =>
-                                    setShowUsersDropdown(!showUsersDropdown)
-                                }
-                            >
-                                <Text style={styles.dropdownText}>
-                                    {selectedUsers.length
-                                        ? `${selectedUsers.length} selecionados`
-                                        : "Selecione os usuários"}
-                                </Text>
-                                <ChevronDown size={16} color="#D2D2D2" />
-                            </TouchableOpacity>
-                            {showUsersDropdown && (
-                                <View style={styles.dropdownContent}>
-                                    {users.map((user) => (
-                                        <TouchableOpacity
-                                            key={user.id}
-                                            style={[
-                                                styles.dropdownItem,
-                                                selectedUsers.find(
-                                                    (u) => u.id === user.id
-                                                ) && styles.selectedItem,
-                                            ]}
-                                            onPress={() =>
-                                                toggleUserSelection(user)
-                                            }
-                                        >
-                                            <View
-                                                style={{
-                                                    flexDirection: "row",
-                                                    alignItems: "center",
-                                                    gap: 10,
-                                                }}
-                                            >
-                                                <OtherUserPhoto
-                                                    id={user.id}
-                                                    size={24}
-                                                />
-                                                <Text style={styles.userName}>
-                                                    {user.name}
-                                                </Text>
-                                            </View>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-                        </View>
-
-                        {selectedUsers.map((user) => (
-                            <View
-                                key={user.id}
-                                style={styles.selectedUserContainer}
-                            >
-                                <View style={styles.userInfo}>
-                                    <OtherUserPhoto id={user.id} size={24} />
-                                    <Text style={styles.userName}>
-                                        {user.name}
-                                    </Text>
+                        {user?.role === enumRole.PARENT && (
+                            <>
+                                <View style={styles.inputGroup}>
+                                    <Text style={styles.label}>Usuários</Text>
                                     <TouchableOpacity
+                                        style={styles.dropdown}
                                         onPress={() =>
-                                            handleDeleteUser(user.id)
+                                            setShowUsersDropdown(
+                                                !showUsersDropdown
+                                            )
                                         }
                                     >
-                                        <Text style={styles.removeText}>
-                                            remover
+                                        <Text style={styles.dropdownText}>
+                                            {selectedUsers?.length
+                                                ? `${selectedUsers?.length} selecionados`
+                                                : "Selecione os usuários"}
                                         </Text>
+                                        <ChevronDown
+                                            size={16}
+                                            color="#D2D2D2"
+                                        />
                                     </TouchableOpacity>
+                                    {showUsersDropdown && (
+                                        <View style={styles.dropdownContent}>
+                                            {users?.map((user) => (
+                                                <TouchableOpacity
+                                                    key={user.id}
+                                                    style={[
+                                                        styles.dropdownItem,
+                                                        selectedUsers.find(
+                                                            (u) =>
+                                                                u.id === user.id
+                                                        ) &&
+                                                            styles.selectedItem,
+                                                    ]}
+                                                    onPress={() =>
+                                                        toggleUserSelection(
+                                                            user
+                                                        )
+                                                    }
+                                                >
+                                                    <View
+                                                        style={{
+                                                            flexDirection:
+                                                                "row",
+                                                            alignItems:
+                                                                "center",
+                                                            gap: 10,
+                                                        }}
+                                                    >
+                                                        <OtherUserPhoto
+                                                            id={user.id}
+                                                            size={24}
+                                                        />
+                                                        <Text
+                                                            style={
+                                                                styles.userName
+                                                            }
+                                                        >
+                                                            {user.name}
+                                                        </Text>
+                                                    </View>
+                                                </TouchableOpacity>
+                                            ))}
+                                        </View>
+                                    )}
                                 </View>
-                                <View style={styles.userControls}>
-                                    <View style={styles.rewardContainer}>
-                                        <Text style={styles.label}>
-                                            {selectedCategory.value ===
-                                            enumCategory.REWARD
-                                                ? "Recompensa"
-                                                : "Penalidade"}
-                                        </Text>
-                                        <TextInput
-                                            style={styles.rewardInput}
-                                            value={userRewards[user.id]}
-                                            onChangeText={(value) =>
-                                                setUserRewards({
-                                                    ...userRewards,
-                                                    [user.id]: value,
-                                                })
-                                            }
-                                            placeholder="10"
-                                            keyboardType="numeric"
-                                        />
-                                    </View>
-                                    <View style={styles.balanceContainer}>
-                                        <Text style={styles.label}>Saldo</Text>
-                                        <TextInput
-                                            style={styles.balanceInput}
-                                            value={userBalances[user.id]}
-                                            onChangeText={(value) =>
-                                                setUserBalances({
-                                                    ...userBalances,
-                                                    [user.id]: value,
-                                                })
-                                            }
-                                            placeholder="40"
-                                            keyboardType="numeric"
-                                        />
-                                    </View>
-                                    <CustomButton
-                                        height={30}
-                                        fontSize={12}
-                                        type="secondary"
-                                        onPress={() => handleAccount(user.id)}
+
+                                {selectedUsers?.map((user) => (
+                                    <View
+                                        key={user.id}
+                                        style={styles.selectedUserContainer}
                                     >
-                                        Contabilizar
+                                        <View style={styles.userInfo}>
+                                            <OtherUserPhoto
+                                                id={user.id}
+                                                size={24}
+                                            />
+                                            <Text style={styles.userName}>
+                                                {user.name}
+                                            </Text>
+                                            <TouchableOpacity
+                                                onPress={() =>
+                                                    handleDeleteUser(user.id)
+                                                }
+                                            >
+                                                <Text style={styles.removeText}>
+                                                    remover
+                                                </Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                        <View style={styles.userControls}>
+                                            <View
+                                                style={styles.rewardContainer}
+                                            >
+                                                <Text style={styles.label}>
+                                                    {selectedCategory.value ===
+                                                    enumCategory.REWARD
+                                                        ? "Recompensa"
+                                                        : "Penalidade"}
+                                                </Text>
+                                                <TextInput
+                                                    style={styles.rewardInput}
+                                                    value={userRewards[user.id]}
+                                                    onChangeText={(value) =>
+                                                        setUserRewards({
+                                                            ...userRewards,
+                                                            [user.id]: value,
+                                                        })
+                                                    }
+                                                    placeholder="10"
+                                                    keyboardType="numeric"
+                                                />
+                                            </View>
+                                            <View
+                                                style={styles.balanceContainer}
+                                            >
+                                                <Text style={styles.label}>
+                                                    Saldo
+                                                </Text>
+                                                <TextInput
+                                                    style={styles.balanceInput}
+                                                    value={
+                                                        userBalances[user.id]
+                                                    }
+                                                    onChangeText={(value) =>
+                                                        setUserBalances({
+                                                            ...userBalances,
+                                                            [user.id]: value,
+                                                        })
+                                                    }
+                                                    placeholder="40"
+                                                    keyboardType="numeric"
+                                                />
+                                            </View>
+                                            {taskId && (
+                                                <CustomButton
+                                                    height={30}
+                                                    fontSize={12}
+                                                    type="secondary"
+                                                    onPress={() =>
+                                                        handleAccount(user.id)
+                                                    }
+                                                >
+                                                    Contabilizar
+                                                </CustomButton>
+                                            )}
+                                        </View>
+                                    </View>
+                                ))}
+
+                                <View style={styles.buttonContainer}>
+                                    <CustomButton
+                                        height={40}
+                                        fontSize={16}
+                                        onPress={() => handleDeleteTask(taskId)}
+                                        color="#FF0000"
+                                        backgroundColor="#FFE5E5"
+                                    >
+                                        Excluir
+                                    </CustomButton>
+                                    <CustomButton
+                                        height={40}
+                                        width={180}
+                                        fontSize={16}
+                                        onPress={handleSubmit(handleNewTask)}
+                                        style={styles.saveButton}
+                                    >
+                                        Salvar Tarefa
                                     </CustomButton>
                                 </View>
+                            </>
+                        )}
+
+                        {user?.role === enumRole.CHILD && (
+                            <View style={styles.chartSection}>
+                                <Text style={styles.chartTitle}>
+                                    {selectedCategory.value ===
+                                    enumCategory.REWARD
+                                        ? "Progresso da Recompensa"
+                                        : "Progresso da Penalidade"}
+                                </Text>
+                                <DonutChart
+                                    limitValue={task?.limitValue}
+                                    currentBalance={task?.currentBalance}
+                                    bonusBalance={task?.bonusBalance}
+                                />
                             </View>
-                        ))}
-                        <View style={styles.buttonContainer}>
-                            <CustomButton
-                                height={40}
-                                fontSize={16}
-                                onPress={() => handleDeleteTask(taskId)}
-                                color="#FF0000"
-                                backgroundColor="#FFE5E5"
-                            >
-                                Excluir
-                            </CustomButton>
-                            <CustomButton
-                                height={40}
-                                width={180}
-                                fontSize={16}
-                                onPress={handleSubmit(handleNewTask)}
-                                style={styles.saveButton}
-                            >
-                                Salvar Tarefa
-                            </CustomButton>
-                        </View>
+                        )}
                     </View>
                 </Pressable>
             </ScrollView>
+
+            <Modal
+                visible={showHistoryModal}
+                transparent
+                animationType="fade"
+                onRequestClose={() => setShowHistoryModal(false)}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContent}>
+                        <View style={styles.modalHeader}>
+                            <Text style={styles.modalTitle}>
+                                Histórico da Ação
+                            </Text>
+                            <TouchableOpacity
+                                onPress={() => setShowHistoryModal(false)}
+                                style={styles.closeButton}
+                            >
+                                <Text style={styles.closeButtonText}>×</Text>
+                            </TouchableOpacity>
+                        </View>
+
+                        <ScrollView style={styles.historyList}>
+                            {isLoadingHistory ? (
+                                <Text style={styles.loadingText}>
+                                    Carregando...
+                                </Text>
+                            ) : history.length > 0 ? (
+                                history?.map((item) => (
+                                    <View
+                                        key={item.id}
+                                        style={styles.historyItem}
+                                    >
+                                        <View style={styles.historyInfo}>
+                                            <Text
+                                                style={styles.historyChildName}
+                                            >
+                                                {item.childName}
+                                            </Text>
+                                            <Text style={styles.historyDetails}>
+                                                Contabilizado por{" "}
+                                                {item.accountedByName}
+                                            </Text>
+                                            <Text style={styles.historyDetails}>
+                                                Valor: {item.value} pontos
+                                            </Text>
+                                            <Text style={styles.historyDate}>
+                                                {new Date(
+                                                    item.accountedAt
+                                                ).toLocaleDateString("pt-BR", {
+                                                    day: "2-digit",
+                                                    month: "2-digit",
+                                                    year: "numeric",
+                                                    hour: "2-digit",
+                                                    minute: "2-digit",
+                                                })}
+                                            </Text>
+                                        </View>
+                                        {!item.isReverted ? (
+                                            <CustomButton
+                                                height={30}
+                                                fontSize={12}
+                                                type="secondary"
+                                                onPress={() =>
+                                                    handleRevertHistory(item.id)
+                                                }
+                                            >
+                                                Reverter
+                                            </CustomButton>
+                                        ) : (
+                                            <Text style={styles.revertedText}>
+                                                Revertido
+                                            </Text>
+                                        )}
+                                    </View>
+                                ))
+                            ) : (
+                                <Text style={styles.noHistoryText}>
+                                    Nenhum histórico encontrado
+                                </Text>
+                            )}
+                        </ScrollView>
+                    </View>
+                </View>
+            </Modal>
         </>
     );
 }
@@ -897,5 +1272,132 @@ const styles = StyleSheet.create({
         fontFamily: fontFamily.roboto.regular,
         color: "#f01",
         textDecorationLine: "underline",
+    },
+    historyButtonContainer: {
+        alignItems: "flex-end",
+        marginBottom: 20,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
+        justifyContent: "center",
+        alignItems: "center",
+        padding: 20,
+    },
+    modalContent: {
+        backgroundColor: colors.white,
+        borderRadius: 24,
+        padding: 20,
+        width: "100%",
+        maxWidth: 500,
+        maxHeight: "80%",
+    },
+    modalHeader: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        marginBottom: 20,
+        paddingBottom: 10,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ECECEC",
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: fontFamily.roboto.bold,
+        color: colors.black,
+    },
+    closeButton: {
+        padding: 5,
+    },
+    closeButtonText: {
+        fontSize: 24,
+        color: "#6B6B6B",
+    },
+    historyList: {
+        maxHeight: "90%",
+    },
+    historyItem: {
+        flexDirection: "row",
+        justifyContent: "space-between",
+        alignItems: "center",
+        padding: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: "#ECECEC",
+    },
+    historyInfo: {
+        flex: 1,
+    },
+    historyChildName: {
+        fontSize: 16,
+        fontFamily: fontFamily.roboto.bold,
+        color: colors.black,
+        marginBottom: 4,
+    },
+    historyDetails: {
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#6B6B6B",
+        marginBottom: 2,
+    },
+    historyDate: {
+        fontSize: 12,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#ADADAD",
+    },
+    noHistoryText: {
+        textAlign: "center",
+        fontSize: 16,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#6B6B6B",
+        marginTop: 20,
+    },
+    loadingText: {
+        textAlign: "center",
+        fontSize: 16,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#6B6B6B",
+        marginTop: 20,
+    },
+    revertedText: {
+        fontSize: 12,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#ADADAD",
+    },
+    chartSection: {
+        marginTop: 10,
+        alignItems: "center",
+        paddingHorizontal: 20,
+        marginBottom: 40,
+    },
+    chartTitle: {
+        fontSize: 18,
+        fontFamily: fontFamily.roboto.bold,
+        color: colors.black,
+        marginBottom: 20,
+        textAlign: "center",
+    },
+    chartContainer: {
+        alignItems: "center",
+        justifyContent: "center",
+    },
+    legendContainer: {
+        marginTop: 20,
+        width: "100%",
+    },
+    legendItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginVertical: 5,
+    },
+    legendColor: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginRight: 8,
+    },
+    legendText: {
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.regular,
+        color: "#6B6B6B",
     },
 });
