@@ -250,3 +250,12 @@ export const getSuggestions = async () => {
         throw error;
     }
 };
+
+export const getCycleSummary = async (familyGroupId) => {
+    try {
+        const response = await api.get("/Tasks/cycle-summary/" + familyGroupId);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

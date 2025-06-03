@@ -1,14 +1,10 @@
 import React from "react";
 import { View, Dimensions, Text } from "react-native";
-import { BarChart } from "react-native-chart-kit";
+import { LineChart } from "react-native-chart-kit";
 import { colors } from "../../styles/color";
 import { fontFamily } from "../../styles/fontFamily";
 
-const BarChartComponent = ({ data, legend }) => {
-    if(typeof data === "undefined") {
-        return null;
-    }
-
+const LineChartComponent = ({ data, legend }) => {
     const screenWidth = Dimensions.get("window").width - 100;
 
     const chartConfig = {
@@ -21,25 +17,26 @@ const BarChartComponent = ({ data, legend }) => {
         style: {
             borderRadius: 16,
         },
-        barPercentage: 0.7,
+        propsForDots: {
+            r: "6",
+            strokeWidth: "2",
+            stroke: colors.primary,
+        },
     };
 
     return (
-        <View  style={{ maxWidth: "100%", width: "100%"}}>
+        <View>
             <Text style={styles.legend}>{legend}</Text>
-            <BarChart
+            <LineChart
                 data={data}
                 width={screenWidth}
                 height={220}
                 chartConfig={chartConfig}
+                bezier
                 style={{
-                    maxWidth: "100%",
-                    width: "100%",
                     marginVertical: 8,
                     borderRadius: 16,
                 }}
-                showValuesOnTopOfBars
-                fromZero
             />
         </View>
     );
@@ -54,4 +51,4 @@ const styles = {
     },
 };
 
-export default BarChartComponent;
+export default LineChartComponent;

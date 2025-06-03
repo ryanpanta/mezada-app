@@ -1,39 +1,224 @@
-import React from "react";
-import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
-import CustomButton from "../../../components/Form/CustomButtom";
+import React, { useState, useEffect } from "react";
+import { ScrollView, StyleSheet, Text, View } from "react-native";
 import HeaderCustom from "../../../components/HeaderCustom";
 import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
-import { CopyCheck } from "lucide-react-native";
 import PieChart from "../../../components/Charts/PieChart";
 import BarChart from "../../../components/Charts/BarChart";
+import LineChart from "../../../components/Charts/LineChart";
+import { getCycleSummary } from "../../../services/endpoints";
+import { useAuth } from "../../../contexts/AuthContext";
+import { showToast } from "../../../helpers/showToast";
+import { useLoading } from "../../../contexts/LoadingContext";
+import Loading from "../../../components/Helpers/Loading";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function CloseCycle() {
+    const { user } = useAuth();
+    const [cycleSummary, setCycleSummary] = useState(null);
+    const { isLoading } = useLoading();
+
+    async function fetchCycleSummary() {
+        try {
+            const response = await getCycleSummary(user?.familyGroupId);
+            console.log(response.data);
+            setCycleSummary(response.data);
+        } catch (error) {
+            console.error(
+                "Erro ao buscar o resumo do ciclo:",
+                error.response?.data
+            );
+            showToast(
+                error.response?.data?.message ||
+                    "Erro ao buscar o resumo do ciclo",
+                "error"
+            );
+        }
+    }
+
+    useEffect(() => {
+        fetchCycleSummary();
+    }, []);
+
+    const prepareMesadaDistributionData = () => {
+        if (!cycleSummary?.childrenSummaries) return [];
+        return cycleSummary.childrenSummaries.map((child, index) => ({
+            name: child.childName,
+            value: child.totalBalance,
+            color: getChartColor(index),
+            legendFontColor: "#7F7F7F",
+            legendFontSize: 12,
+        }));
+    };
+
+    const prepareRewardsPenaltiesData = () => {
+        if (!cycleSummary?.childrenSummaries)
+            return { labels: [], datasets: [] };
+        return {
+            labels: cycleSummary.childrenSummaries.map(
+                (child) => child.childName
+            ),
+            datasets: [
+                {
+                    data: cycleSummary.childrenSummaries.map(
+                        (child) => child.rewardBalance
+                    ),
+                    color: (opacity = 1) => `rgba(82, 167, 94, ${opacity})`,
+                    label: "Recompensas",
+                },
+                {
+                    data: cycleSummary.childrenSummaries.map((child) =>
+                        Math.abs(child.penaltyBalance)
+                    ),
+                    color: (opacity = 1) => `rgba(255, 99, 132, ${opacity})`,
+                    label: "Penalidades",
+                },
+            ],
+            legend: ["Recompensas", "Penalidades"],
+        };
+    };
+
+    const prepareBalanceHistoryData = () => {
+        if (!cycleSummary?.childrenSummaries)
+            return { labels: [], datasets: [] };
+
+        const allDates = new Set();
+        cycleSummary.childrenSummaries.forEach((child) => {
+            child.balanceHistory.forEach((history) => {
+                allDates.add(format(new Date(history.date), "dd/MM"));
+            });
+        });
+        const sortedDates = Array.from(allDates).sort();
+
+        return {
+            labels: sortedDates,
+            datasets: cycleSummary.childrenSummaries.map((child, index) => ({
+                data: sortedDates.map((date) => {
+                    const historyItem = child.balanceHistory.find(
+                        (h) => format(new Date(h.date), "dd/MM") === date
+                    );
+                    return historyItem ? historyItem.balance : 0;
+                }),
+                color: (opacity = 1) => getChartColor(index, opacity),
+                label: child.childName,
+            })),
+        };
+    };
+
+    const prepareBonusData = () => {
+        if (!cycleSummary?.childrenSummaries)
+            return { labels: [], datasets: [] };
+        return {
+            labels: cycleSummary.childrenSummaries.map(
+                (child) => child.childName
+            ),
+            datasets: [
+                {
+                    data: cycleSummary.childrenSummaries.map(
+                        (child) => child.totalBonus
+                    ),
+                },
+            ],
+        };
+    };
+
+    const prepareTotalBalanceData = () => {
+        if (!cycleSummary) return [];
+        return [
+            {
+                name: "Positivo",
+                value: cycleSummary.totalPositiveBalance,
+                color: "#52A75E",
+                legendFontColor: "#7F7F7F",
+                legendFontSize: 12,
+            },
+            {
+                name: "Negativo",
+                value: Math.abs(cycleSummary.totalNegativeBalance),
+                color: "#FF6384",
+                legendFontColor: "#7F7F7F",
+                legendFontSize: 12,
+            },
+        ];
+    };
+
+    const getChartColor = (index, opacity = 1) => {
+        const colors = [
+            `rgba(82, 167, 94, ${opacity})`,
+            `rgba(255, 99, 132, ${opacity})`,
+            `rgba(54, 162, 235, ${opacity})`,
+            `rgba(255, 206, 86, ${opacity})`,
+            `rgba(75, 192, 192, ${opacity})`,
+        ];
+        return colors[index % colors.length];
+    };
+
+    if(cycleSummary === null) {
+        return (
+            <View>
+                <Text>Nenhum dado para exibir</Text>
+            </View>
+        );
+    }
+
     return (
-        <ScrollView style={styles.container}>
-            <View style={{ marginBottom: 26 }}>
-                <HeaderCustom title="Encerrar o Ciclo" />
-            </View>
-            <Text style={styles.mainText}>
-                Ao encerrar o ciclo de mesada, todas as tarefas aprovadas serão
-                contabilizadas. Você poderá visualizar gráficos de desempenho e
-                sugerir um valor de mesada com base nos pontos acumulados.
-            </Text>
-            <Text style={styles.sectionTitle}>Relatório Gráficos</Text>
-            <View style={styles.background}>
-                <View style={{ gap: 30 }}>
-                    <PieChart legend="Status tarefas" />
-                    <BarChart legend="Maiores pontos" />
+        <>
+            {isLoading && <Loading />}
+            <ScrollView style={styles.container}>
+                <View style={{ marginBottom: 26 }}>
+                    <HeaderCustom title="Encerrar o Ciclo" />
                 </View>
-            </View>
-            <Text style={styles.sectionTitle}>Sugestão de Mesada</Text>
-            <View style={styles.background}>
-                <Text style={styles.label}>Filho(a)</Text>
-                <Text style={styles.mainText}>Ryan Rodrigues</Text>
-                <Text style={styles.label}>Pontos</Text>
-                <Text style={styles.mainText}>23 pontos</Text>
-            </View>
-        </ScrollView>
+                <Text style={styles.mainText}>
+                    Ao encerrar o ciclo de mesada, todas as ações serão
+                    contabilizadas. Nessa seção você pode visualizar gráficos de
+                    desempenho ao longo do ciclo e uma sugestão de mesada com
+                    base nos valores acumulados.
+                </Text>
+
+                <Text style={styles.sectionTitle}>Distribuição da Mesada</Text>
+                <View style={styles.background}>
+                    {/* <PieChart
+                        data={prepareMesadaDistributionData()}
+                        legend="Distribuição por filho"
+                    /> */}
+                </View>
+
+                <Text style={styles.sectionTitle}>
+                    Recompensas vs. Penalidades
+                </Text>
+                <View style={styles.background}>
+                    <BarChart
+                        data={prepareRewardsPenaltiesData()}
+                        legend="Comparativo por filho"
+                    />
+                </View>
+
+                <Text style={styles.sectionTitle}>Evolução do Saldo</Text>
+                <View style={styles.background}>
+                    <LineChart
+                        data={prepareBalanceHistoryData()}
+                        legend="Evolução por filho"
+                    />
+                </View>
+
+                <Text style={styles.sectionTitle}>Bônus Acumulados</Text>
+                <View style={styles.background}>
+                    <BarChart
+                        data={prepareBonusData()}
+                        legend="Bônus por filho"
+                    />
+                </View>
+
+                <Text style={styles.sectionTitle}>Balanço Total do Ciclo</Text>
+                <View style={styles.background}>
+                    <PieChart
+                        data={prepareTotalBalanceData()}
+                        legend="Distribuição total"
+                    />
+                </View>
+            </ScrollView>
+        </>
     );
 }
 
@@ -47,14 +232,17 @@ const styles = StyleSheet.create({
         backgroundColor: colors.background,
     },
     mainText: {
-        fontSize: 18,
+        fontSize: 16,
         marginBottom: 26,
         fontFamily: fontFamily.roboto.regular,
+        color: colors.gray[600],
+        lineHeight: 24,
     },
     sectionTitle: {
         fontSize: 18,
         fontFamily: fontFamily.roboto.bold,
         marginBottom: 12,
+        color: colors.black,
     },
     background: {
         marginTop: 10,
@@ -62,80 +250,5 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(82, 167, 94, 0.1)",
         borderRadius: 20,
         marginBottom: 30,
-    },
-    formContainer: {
-        marginBottom: 30,
-        gap: 20,
-    },
-    inputContainer: {
-        gap: 4,
-        borderBottomWidth: 1,
-        borderBottomColor: colors.gray[300],
-    },
-    input: {
-        width: "90%",
-        fontSize: 18,
-        paddingVertical: 4,
-        fontFamily: fontFamily.roboto.regular,
-    },
-    buttonContainer: {
-        marginTop: 20,
-    },
-    questionContainer: {
-        alignItems: "center",
-        marginTop: 80,
-    },
-    questionText: {
-        fontFamily: fontFamily.roboto.regular,
-        fontSize: 18,
-        textAlign: "center",
-    },
-    loginSpan: {
-        color: colors.primary,
-        fontFamily: fontFamily.roboto.bold,
-        textDecorationLine: "underline",
-    },
-    errorText: {
-        color: "#ff375b",
-        fontSize: 14,
-        fontFamily: fontFamily.roboto.regular,
-        marginTop: 4,
-    },
-    infoTextCode: {
-        marginTop: 10,
-        fontSize: 16,
-        fontFamily: fontFamily.roboto.regular,
-        maxWidth: "90%",
-        color: colors.gray[700],
-    },
-    infoTextCodeSpan: {
-        fontFamily: fontFamily.roboto.bold,
-        fontSize: 17,
-    },
-    label: {
-        fontFamily: fontFamily.roboto.regular,
-        fontSize: 14,
-        textTransform: "uppercase",
-        letterSpacing: 1.3,
-        color: colors.gray[600],
-        marginBottom: 4,
-    },
-    actionText: {
-        fontFamily: fontFamily.roboto.regular,
-        fontSize: 16,
-        color: colors.black,
-        maxWidth: "90%",
-    },
-    groupName: {
-        fontFamily: fontFamily.roboto.medium,
-        fontSize: 20,
-        color: colors.black,
-        marginBottom: 20,
-    },
-    user: {
-        fontFamily: fontFamily.roboto.regular,
-        fontSize: 18,
-        color: colors.black,
-        marginBottom: 6,
     },
 });

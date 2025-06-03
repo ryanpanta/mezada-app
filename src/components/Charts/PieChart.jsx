@@ -1,64 +1,47 @@
 import React from "react";
-import { View, Text } from "react-native";
-import { Svg, G, Path } from "react-native-svg";
-import * as d3 from "d3";
-import { fontFamily } from "../../styles/fontFamily";
+import { View, Dimensions, Text } from "react-native";
+import { PieChart } from "react-native-chart-kit";
 import { colors } from "../../styles/color";
+import { fontFamily } from "../../styles/fontFamily";
 
-const data = [
-    { label: "Aprovadas", value: 80, color: "#ff6384" },
-    { label: "Pendentes", value: 10, color: "#36a2eb" },
-    { label: "Rejeitadas", value: 10, color: "#ffce56" },
-    /* { label: "D", value: 10, color: "#4bc0c0" }, */
-];
+const PieChartComponent = ({ data, legend }) => {
+    const screenWidth = Dimensions.get("window").width - 60;
 
-const PieChart = ({ width = 160, height = 160, legend }) => {
-    const radius = Math.min(width, height) / 2;
-
-    // Gerador de fatias do gráfico de pizza
-    const pieGenerator = d3.pie().value((d) => d.value);
-    const arcGenerator = d3.arc().innerRadius(0).outerRadius(radius);
-
-    const pieData = pieGenerator(data);
+    const chartConfig = {
+        backgroundColor: "#ffffff",
+        backgroundGradientFrom: "#ffffff",
+        backgroundGradientTo: "#ffffff",
+        color: (opacity = 1) => `rgba(82, 167, 94, ${opacity})`,
+        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+        style: {
+            borderRadius: 16,
+        },
+    };
 
     return (
-        <View style={{
-            justifyContent: "center",
-            alignItems: "center",
-        }}>
-            <View
-                style={{
-                    flexDirection: "row",
-                    gap: 20,
-                    justifyContent: "center",
-                    alignItems: "center",
-                }}
-            >
-                <Svg width={width} height={height}>
-                    <G transform={`translate(${width / 2},${height / 2})`}>
-                        {pieData.map((slice, index) => (
-                            <Path
-                                key={index}
-                                d={arcGenerator(slice)}
-                                fill={data[index].color}
-                            />
-                        ))}
-                    </G>
-                </Svg>
-                <View>
-                    {data.map((item, index) => (
-                        <Text
-                            key={index}
-                            style={{ color: item.color, fontWeight: "bold" }}
-                        >
-                            {item.label}: {item.value}%
-                        </Text>
-                    ))}
-                </View>
-            </View>
-            <Text style={{marginTop: 14, fontFamily: fontFamily.roboto.light, color: colors.black, fontSize: 16}}>Legenda: <Text style={{marginTop: 14, fontFamily: fontFamily.roboto.medium, color: colors.black, fontSize: 16}}>{legend}</Text></Text>
+        <View style={{ maxWidth: "100%", width: "100%"}}>
+            <Text style={styles.legend}>{legend}</Text>
+            <PieChart
+                data={data}
+                width={screenWidth}
+                height={220}
+                chartConfig={chartConfig}
+                accessor="value"
+                backgroundColor="transparent"
+                paddingLeft="10"
+                absolute
+            />
         </View>
     );
 };
 
-export default PieChart;
+const styles = {
+    legend: {
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.bold,
+        color: colors.black,
+        marginBottom: 10,
+    },
+};
+
+export default PieChartComponent;
