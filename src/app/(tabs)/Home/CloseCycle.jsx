@@ -22,13 +22,13 @@ export default function CloseCycle() {
     async function fetchCycleSummary() {
         try {
             const response = await getCycleSummary(user?.familyGroupId);
-            console.log(response.data);
             setCycleSummary(response.data);
-        } catch (error) {
-            console.error(
-                "Erro ao buscar o resumo do ciclo:",
-                error.response?.data
+            console.log(response.data);
+            cycleSummary.childrenSummaries.map((child) =>
+                console.log(child.balanceHistory)
             );
+        } catch (error) {
+            console.error("Erro ao buscar o resumo do ciclo:", error);
             showToast(
                 error.response?.data?.message ||
                     "Erro ao buscar o resumo do ciclo",
@@ -89,7 +89,18 @@ export default function CloseCycle() {
                 allDates.add(format(new Date(history.date), "dd/MM"));
             });
         });
-        const sortedDates = Array.from(allDates).sort();
+        const sortedDates = Array.from(allDates).sort((a, b) => {
+            const [dayA, monthA] = a.split("/").map(Number);
+            const [dayB, monthB] = b.split("/").map(Number);
+            return monthA === monthB ? dayA - dayB : monthA - monthB;
+        });
+
+        const colors = [
+            (opacity = 1) => `rgba(82, 167, 94, ${opacity})`,
+            (opacity = 1) => `rgba(255, 99, 132, ${opacity})`,
+            (opacity = 1) => `rgba(54, 162, 235, ${opacity})`,
+            (opacity = 1) => `rgba(255, 206, 86, ${opacity})`,
+        ];
 
         return {
             labels: sortedDates,
@@ -100,7 +111,7 @@ export default function CloseCycle() {
                     );
                     return historyItem ? historyItem.balance : 0;
                 }),
-                color: (opacity = 1) => getChartColor(index, opacity),
+                color: colors[index % colors.length],
                 label: child.childName,
             })),
         };
@@ -154,7 +165,7 @@ export default function CloseCycle() {
         return colors[index % colors.length];
     };
 
-    if(cycleSummary === null) {
+    if (cycleSummary === null) {
         return (
             <View>
                 <Text>Nenhum dado para exibir</Text>
@@ -178,10 +189,10 @@ export default function CloseCycle() {
 
                 <Text style={styles.sectionTitle}>Distribuição da Mesada</Text>
                 <View style={styles.background}>
-                    {/* <PieChart
+                    <PieChart
                         data={prepareMesadaDistributionData()}
                         legend="Distribuição por filho"
-                    /> */}
+                    />
                 </View>
 
                 <Text style={styles.sectionTitle}>

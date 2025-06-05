@@ -5,7 +5,17 @@ import { colors } from "../../styles/color";
 import { fontFamily } from "../../styles/fontFamily";
 
 const PieChartComponent = ({ data, legend }) => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return null;
+    }
+
     const screenWidth = Dimensions.get("window").width - 60;
+
+    // Ensure all values are valid numbers
+    const validatedData = data.map((item) => ({
+        ...item,
+        value: Number(item.value) || 0,
+    }));
 
     const chartConfig = {
         backgroundColor: "#ffffff",
@@ -18,11 +28,22 @@ const PieChartComponent = ({ data, legend }) => {
         },
     };
 
+    // Check if all values are 0
+    const hasNonZeroValues = validatedData.some((item) => item.value !== 0);
+    if (!hasNonZeroValues) {
+        return (
+            <View style={{ maxWidth: "100%", width: "100%" }}>
+                <Text style={styles.legend}>{legend}</Text>
+                <Text style={styles.noData}>Não há dados para exibir</Text>
+            </View>
+        );
+    }
+
     return (
-        <View style={{ maxWidth: "100%", width: "100%"}}>
+        <View style={{ maxWidth: "100%", width: "100%" }}>
             <Text style={styles.legend}>{legend}</Text>
             <PieChart
-                data={data}
+                data={validatedData}
                 width={screenWidth}
                 height={220}
                 chartConfig={chartConfig}
@@ -41,6 +62,13 @@ const styles = {
         fontFamily: fontFamily.roboto.bold,
         color: colors.black,
         marginBottom: 10,
+    },
+    noData: {
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.regular,
+        color: colors.gray[600],
+        textAlign: "center",
+        marginTop: 20,
     },
 };
 
