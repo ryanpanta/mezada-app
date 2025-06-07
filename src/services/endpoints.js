@@ -259,3 +259,12 @@ export const getCycleSummary = async (familyGroupId) => {
         throw error;
     }
 };
+
+export const endCycle = async (familyGroupId) => {
+    try {
+        const response = await api.post("/Tasks/end-cycle/" + familyGroupId);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+};

@@ -5,7 +5,7 @@ import { Slot, usePathname } from "expo-router";
 
 export default function Layout() {
     const pathname = usePathname();
-    const showTabBar = !pathname.includes("NewTask") && !pathname.includes("NewSuggestion") && !pathname.includes("GroupInformation");
+    const showTabBar = !pathname.includes("NewTask") && !pathname.includes("NewSuggestion") && !pathname.includes("GroupInformation") && !pathname.includes("CloseCycle");
 
     return (
         <View

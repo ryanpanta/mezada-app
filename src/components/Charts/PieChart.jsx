@@ -1,57 +1,82 @@
 import React from "react";
-import { View, Dimensions, Text } from "react-native";
-import { PieChart } from "react-native-chart-kit";
+import { View, Text, Dimensions } from "react-native";
+import Svg, { G, Path, Text as SvgText } from "react-native-svg";
+import * as d3 from "d3";
 import { colors } from "../../styles/color";
 import { fontFamily } from "../../styles/fontFamily";
 
-const PieChartComponent = ({ data, legend }) => {
-    if (!data || !Array.isArray(data) || data.length === 0) {
-        return null;
-    }
+const PieChart = ({ data, legend: chartLegend }) => {
+    if (!data || data.length === 0) return null;
 
-    const screenWidth = Dimensions.get("window").width - 60;
+    const width = Dimensions.get("window").width - 150;
+    const height = width;
+    const radius = Math.min(width, height) / 2;
+    const centerX = width / 2;
+    const centerY = height / 2;
 
-    // Ensure all values are valid numbers
-    const validatedData = data.map((item) => ({
-        ...item,
-        value: Number(item.value) || 0,
+    // Create pie generator
+    const pie = d3
+        .pie()
+        .value((d) => d.value)
+        .sort(null);
+
+    // Create arc generator
+    const arc = d3
+        .arc()
+        .innerRadius(radius * 0.4)
+        .outerRadius(radius * 0.8);
+
+    // Generate paths
+    const paths = pie(data).map((d, i) => ({
+        path: arc({
+            startAngle: d.startAngle,
+            endAngle: d.endAngle,
+            padAngle: 0.02,
+        }),
+        color: data[i].color,
+        name: data[i].name,
+        value: data[i].value,
     }));
 
-    const chartConfig = {
-        backgroundColor: "#ffffff",
-        backgroundGradientFrom: "#ffffff",
-        backgroundGradientTo: "#ffffff",
-        color: (opacity = 1) => `rgba(82, 167, 94, ${opacity})`,
-        labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        style: {
-            borderRadius: 16,
-        },
-    };
-
-    // Check if all values are 0
-    const hasNonZeroValues = validatedData.some((item) => item.value !== 0);
-    if (!hasNonZeroValues) {
+    // Renderizar a legenda
+    const renderLegend = () => {
         return (
-            <View style={{ maxWidth: "100%", width: "100%" }}>
-                <Text style={styles.legend}>{legend}</Text>
-                <Text style={styles.noData}>Não há dados para exibir</Text>
+            <View style={styles.legendContainer}>
+                {data.map((item, index) => (
+                    <View key={index} style={styles.legendItem}>
+                        <View
+                            style={[
+                                styles.legendColor,
+                                { backgroundColor: item.color },
+                            ]}
+                        />
+                        <Text style={styles.legendText}>
+                            {item.name}: {item.value}
+                        </Text>
+                    </View>
+                ))}
             </View>
         );
-    }
+    };
 
     return (
-        <View style={{ maxWidth: "100%", width: "100%" }}>
-            <Text style={styles.legend}>{legend}</Text>
-            <PieChart
-                data={validatedData}
-                width={screenWidth}
-                height={220}
-                chartConfig={chartConfig}
-                accessor="value"
-                backgroundColor="transparent"
-                paddingLeft="10"
-                absolute
-            />
+        <View style={{ width: "100%" }}>
+            <Text style={styles.legend}>{chartLegend}</Text>
+            <View style={styles.chartContainer}>
+                <Svg width={width} height={height}>
+                    <G transform={`translate(${centerX}, ${centerY})`}>
+                        {paths.map((item, index) => (
+                            <Path
+                                key={index}
+                                d={item.path}
+                                fill={item.color}
+                                strokeWidth={2}
+                            />
+                        ))}
+                    </G>
+                </Svg>
+                {renderLegend()}
+            </View>
         </View>
     );
 };
@@ -63,13 +88,32 @@ const styles = {
         color: colors.black,
         marginBottom: 10,
     },
-    noData: {
-        fontSize: 14,
+    chartContainer: {
+        alignItems: "center",
+    },
+    legendContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginTop: 10,
+        flexWrap: "wrap",
+    },
+    legendItem: {
+        flexDirection: "row",
+        alignItems: "center",
+        marginHorizontal: 10,
+        marginVertical: 5,
+    },
+    legendColor: {
+        width: 12,
+        height: 12,
+        borderRadius: 6,
+        marginRight: 5,
+    },
+    legendText: {
+        fontSize: 12,
         fontFamily: fontFamily.roboto.regular,
         color: colors.gray[600],
-        textAlign: "center",
-        marginTop: 20,
     },
 };
 
-export default PieChartComponent;
+export default PieChart;

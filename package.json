@@ -38,6 +38,7 @@
     "react-native-svg-transformer": "^1.5.0",
     "react-native-toast-message": "^2.2.1",
     "toastify-react-native": "^6.0.0",
+    "victory-native": "^41.17.3",
     "yup": "^1.6.1"
   },
   "devDependencies": {

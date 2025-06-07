@@ -1,32 +1,37 @@
 import React, { useState, useEffect } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+    ScrollView,
+    StyleSheet,
+    Text,
+    View,
+    TouchableOpacity,
+} from "react-native";
 import HeaderCustom from "../../../components/HeaderCustom";
 import { colors } from "../../../styles/color";
 import { fontFamily } from "../../../styles/fontFamily";
 import PieChart from "../../../components/Charts/PieChart";
 import BarChart from "../../../components/Charts/BarChart";
 import LineChart from "../../../components/Charts/LineChart";
-import { getCycleSummary } from "../../../services/endpoints";
+import { getCycleSummary, endCycle } from "../../../services/endpoints";
 import { useAuth } from "../../../contexts/AuthContext";
 import { showToast } from "../../../helpers/showToast";
 import { useLoading } from "../../../contexts/LoadingContext";
 import Loading from "../../../components/Helpers/Loading";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { useRouter } from "expo-router";
+import CustomButton from "../../../components/Form/CustomButtom";
 
 export default function CloseCycle() {
     const { user } = useAuth();
     const [cycleSummary, setCycleSummary] = useState(null);
-    const { isLoading } = useLoading();
+    const { isLoading, setIsLoading } = useLoading();
+    const router = useRouter();
 
     async function fetchCycleSummary() {
         try {
             const response = await getCycleSummary(user?.familyGroupId);
             setCycleSummary(response.data);
-            console.log(response.data);
-            cycleSummary.childrenSummaries.map((child) =>
-                console.log(child.balanceHistory)
-            );
         } catch (error) {
             console.error("Erro ao buscar o resumo do ciclo:", error);
             showToast(
@@ -53,25 +58,31 @@ export default function CloseCycle() {
     };
 
     const prepareRewardsPenaltiesData = () => {
-        if (!cycleSummary?.childrenSummaries)
+        if (!cycleSummary?.childrenSummaries) {
             return { labels: [], datasets: [] };
+        }
+
+        const labels = cycleSummary.childrenSummaries.map(
+            (child) => child.childName
+        );
+        const rewards = cycleSummary.childrenSummaries.map(
+            (child) => Number(child.rewardBalance) || 0
+        );
+        const penalties = cycleSummary.childrenSummaries.map(
+            (child) => Number(child.penaltyBalance) || 0
+        );
+
         return {
-            labels: cycleSummary.childrenSummaries.map(
-                (child) => child.childName
-            ),
+            labels: labels,
             datasets: [
                 {
-                    data: cycleSummary.childrenSummaries.map(
-                        (child) => child.rewardBalance
-                    ),
-                    color: (opacity = 1) => `rgba(82, 167, 94, ${opacity})`,
+                    data: rewards,
+                    color: (opacity = 1) => `rgba(82, 167, 94, ${opacity})`, // Green for Recompensas
                     label: "Recompensas",
                 },
                 {
-                    data: cycleSummary.childrenSummaries.map((child) =>
-                        Math.abs(child.penaltyBalance)
-                    ),
-                    color: (opacity = 1) => `rgba(255, 99, 132, ${opacity})`,
+                    data: penalties,
+                    color: (opacity = 1) => `rgba(255, 99, 132, ${opacity})`, // Pink for Penalidades
                     label: "Penalidades",
                 },
             ],
@@ -165,12 +176,25 @@ export default function CloseCycle() {
         return colors[index % colors.length];
     };
 
+    const handleEndCycle = async () => {
+        try {
+            setIsLoading(true);
+            await endCycle(user?.familyGroupId);
+            showToast("Ciclo encerrado com sucesso!", "success");
+            router.push("/(tabs)/Home");
+        } catch (error) {
+            console.error("Erro ao encerrar o ciclo:", error);
+            showToast(
+                error.response?.data?.message || "Erro ao encerrar o ciclo",
+                "error"
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     if (cycleSummary === null) {
-        return (
-            <View>
-                <Text>Nenhum dado para exibir</Text>
-            </View>
-        );
+        return <Loading />;
     }
 
     return (
@@ -228,6 +252,40 @@ export default function CloseCycle() {
                         legend="Distribuição total"
                     />
                 </View>
+
+                <Text style={styles.sectionTitle}>Recomendação de Mesada</Text>
+                <View style={[styles.background, styles.lastBackground]}>
+                    {cycleSummary?.childrenSummaries?.map((child, index) => (
+                        <View key={index} style={styles.recommendationItem}>
+                            <Text style={styles.childName}>
+                                {child.childName}
+                            </Text>
+                            <Text style={styles.balanceText}>
+                                Saldo Total: R$ {child.totalBalance}
+                            </Text>
+                            <Text style={styles.distributionText}>
+                                Distribuição:{" "}
+                                {(
+                                    (child.totalBalance /
+                                        cycleSummary.childrenSummaries.reduce(
+                                            (acc, curr) =>
+                                                acc + curr.totalBalance,
+                                            0
+                                        )) *
+                                    100
+                                ).toFixed(1)}
+                                %
+                            </Text>
+                        </View>
+                    ))}
+                    <CustomButton
+                        onPress={handleEndCycle}
+                        style={styles.confirmButton}
+                        fontSize={16}
+                    >
+                        Confirmar encerramento do ciclo
+                    </CustomButton>
+                </View>
             </ScrollView>
         </>
     );
@@ -261,5 +319,37 @@ const styles = StyleSheet.create({
         backgroundColor: "rgba(82, 167, 94, 0.1)",
         borderRadius: 20,
         marginBottom: 30,
+    },
+     lastBackground: {
+        marginBottom: 300,
+    },
+    recommendationItem: {
+        marginBottom: 20,
+        padding: 15,
+        backgroundColor: "rgba(82, 167, 94, 0.1)",
+        borderRadius: 10,
+    },
+    childName: {
+        fontSize: 16,
+        fontFamily: fontFamily.roboto.bold,
+        color: colors.black,
+        marginBottom: 5,
+    },
+    balanceText: {
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.regular,
+        color: colors.gray[600],
+        marginBottom: 3,
+    },
+    distributionText: {
+        fontSize: 14,
+        fontFamily: fontFamily.roboto.regular,
+        color: colors.gray[600],
+    },
+
+    confirmButtonText: {
+        color: colors.white,
+        fontSize: 16,
+        fontFamily: fontFamily.roboto.bold,
     },
 });

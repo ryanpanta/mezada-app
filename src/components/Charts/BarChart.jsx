@@ -75,8 +75,6 @@ const BarChartComponent = ({ data, legend }) => {
                 height={220}
                 chartConfig={chartConfig}
                 style={{
-                    maxWidth: "100%",
-                    width: "100%",
                     marginVertical: 8,
                     borderRadius: 16,
                 }}

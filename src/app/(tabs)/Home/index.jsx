@@ -89,9 +89,6 @@ const DashBoard = () => {
                         <Text style={styles.groupText}>
                             {familyGroupData?.name}
                         </Text>
-                        <TouchableOpacity onPress={logout}>
-                            <Text>Logout</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
                 <View style={styles.tasksContainer}>
